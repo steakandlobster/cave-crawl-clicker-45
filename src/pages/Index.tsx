@@ -16,7 +16,7 @@ const Index = () => {
 
   const presetAmounts = [50, 100, 250];
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     const credits = selectedAmount || parseInt(customAmount);
     
     if (!credits || credits < 10) {
@@ -37,7 +37,34 @@ const Index = () => {
       return;
     }
 
-    navigate("/game", { state: { credits } });
+    // TODO: Replace with actual backend call
+    // For now, simulate backend response
+    try {
+      // const response = await fetch('/api/start-game', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ credits })
+      // });
+      // const data = await response.json();
+      
+      // Simulated backend response
+      const numOptions = Math.floor(Math.random() * 6) + 3; // 3-8 options
+      
+      navigate("/exploration", { 
+        state: { 
+          credits, 
+          numOptions,
+          round: 1,
+          maxRounds: 6 
+        } 
+      });
+    } catch (error) {
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to game server. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getAmountForButton = () => {
@@ -53,9 +80,20 @@ const Index = () => {
       />
       
       <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="mb-12">
-            <Pickaxe className="w-20 h-20 mx-auto mb-6 text-treasure-gold animate-glow-pulse" />
+        <div className="max-w-4xl mx-auto">
+          {/* Hero Section with Cave Image */}
+          <div className="text-center mb-12">
+            <div className="relative mb-8">
+              <img 
+                src="https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=800&h=400&fit=crop" 
+                alt="Mysterious cave entrance surrounded by rock formations"
+                className="w-full max-w-2xl mx-auto rounded-lg shadow-deep object-cover h-64"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Pickaxe className="w-20 h-20 text-treasure-gold animate-glow-pulse" />
+              </div>
+            </div>
             <h1 className="text-5xl font-bold mb-4 text-treasure-gold">
               Cave Explorer
             </h1>
@@ -63,9 +101,11 @@ const Index = () => {
               Venture into mysterious caves to discover hidden treasures!
             </p>
             <p className="text-sm text-muted-foreground">
-              Each cave exploration costs 10 credits. Choose wisely!
+              Each cave exploration costs 10 credits. Survive 6 rounds to win!
             </p>
           </div>
+
+          <div className="max-w-2xl mx-auto">{/* Game Setup Card */}
 
           <Card className="p-8 shadow-deep">
             <div className="space-y-6">
@@ -137,9 +177,14 @@ const Index = () => {
             </div>
           </Card>
 
+          </div>
+
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
               💡 Tip: Start with 100 credits for a balanced exploration experience
+            </p>
+            <p className="text-xs text-muted-foreground mt-2 opacity-75">
+              Note: Backend integration required for full multiplayer experience
             </p>
           </div>
         </div>
