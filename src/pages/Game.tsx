@@ -150,7 +150,7 @@ export default function Game() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-cave">
+    <div className="min-h-screen cave-background">
       <GameHeader
         credits={gameState.credits}
         rounds={gameState.rounds}

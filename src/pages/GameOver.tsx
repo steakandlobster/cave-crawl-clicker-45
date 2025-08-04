@@ -25,7 +25,7 @@ export default function GameOver() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-cave flex items-center justify-center p-4">
+    <div className="min-h-screen cave-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full p-8 text-center animate-slide-in shadow-deep">
         <div className="mb-6">
           <Skull className="w-20 h-20 mx-auto mb-4 text-red-400 animate-glow-pulse" />
