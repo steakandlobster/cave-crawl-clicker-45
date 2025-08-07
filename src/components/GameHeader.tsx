@@ -15,7 +15,7 @@ interface GameHeaderProps {
   overallStats?: {
     totalGamesPlayed: number;
     totalRoundsPlayed: number;
-    totalCreditsWon: number;
+    totalNetCredits: number;
   };
 }
 
@@ -62,6 +62,28 @@ export const GameHeader = ({ credits, rounds, score, timeRemaining, sessionStats
 
   return (
     <div className="w-full bg-card border-b border-border">
+      {/* Session and Overall Statistics at top */}
+      {(sessionStats || overallStats) && (
+        <div className="border-b border-border bg-secondary/20 p-3">
+          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+            {sessionStats && (
+              <div className="flex gap-4">
+                <span>Session: {sessionStats.sessionRounds} rounds</span>
+                <span>{sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits} net credits</span>
+              </div>
+            )}
+            {overallStats && (
+              <div className="flex gap-4 border-l border-border pl-4">
+                <span>Overall: {overallStats.totalGamesPlayed} games</span>
+                <span>{overallStats.totalRoundsPlayed} rounds</span>
+                <span>{overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits} net credits</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Current game stats at bottom */}
       <div className="flex flex-wrap gap-2 p-4">
         {panels.map((panel) => (
           <div key={panel.id} className="relative">
@@ -87,27 +109,6 @@ export const GameHeader = ({ credits, rounds, score, timeRemaining, sessionStats
           </div>
         ))}
       </div>
-      
-      {/* Session and Overall Statistics */}
-      {(sessionStats || overallStats) && (
-        <div className="border-t border-border bg-secondary/20 p-3">
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-            {sessionStats && (
-              <div className="flex gap-4">
-                <span>Session: {sessionStats.sessionRounds} rounds</span>
-                <span>{sessionStats.sessionCredits} credits</span>
-              </div>
-            )}
-            {overallStats && (
-              <div className="flex gap-4 border-l border-border pl-4">
-                <span>Overall: {overallStats.totalGamesPlayed} games</span>
-                <span>{overallStats.totalRoundsPlayed} rounds</span>
-                <span>{overallStats.totalCreditsWon} credits won</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

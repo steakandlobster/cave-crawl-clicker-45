@@ -29,8 +29,8 @@ export default function Game() {
   const location = useLocation();
   const initialCredits = location.state?.credits || 100;
   
-  const { sessionStats, updateSessionRounds, updateSessionCredits } = useSessionStats();
-  const { overallStats, incrementGamesPlayed, addRoundsPlayed, addCreditsWon } = useOverallStats();
+  const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
+  const { overallStats, incrementGamesPlayed, addRoundsPlayed, addNetCredits } = useOverallStats();
 
   const [gameState, setGameState] = useState<GameState>({
     credits: initialCredits,
@@ -65,11 +65,7 @@ export default function Game() {
     incrementGamesPlayed();
   }, [incrementGamesPlayed]);
 
-  // Update session stats based on current game state
-  useEffect(() => {
-    updateSessionRounds(gameState.rounds);
-    updateSessionCredits(gameState.credits);
-  }, [gameState.rounds, gameState.credits, updateSessionRounds, updateSessionCredits]);
+  // This effect is removed as we'll update stats only when game ends
 
   const handleCaveClick = (caveId: number) => {
     if (gameState.isGameOver) return;
@@ -116,9 +112,15 @@ export default function Game() {
       }
 
       if (isGameOver) {
-        // Update overall stats when game ends
+        // Calculate net credits (score - credits spent)
+        const creditsSpent = prev.initialCredits - newCredits;
+        const netCredits = newScore - creditsSpent;
+        
+        // Update stats when game ends
+        addSessionRounds(newRounds);
+        addSessionCredits(netCredits);
         addRoundsPlayed(newRounds);
-        addCreditsWon(newScore);
+        addNetCredits(netCredits);
         
         setTimeout(() => {
           setGameState(current => ({ ...current, isGameOver: true }));

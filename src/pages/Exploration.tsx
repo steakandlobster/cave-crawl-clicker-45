@@ -24,8 +24,8 @@ export default function Exploration() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const { sessionStats, updateSessionRounds, updateSessionCredits } = useSessionStats();
-  const { overallStats, addRoundsPlayed, addCreditsWon } = useOverallStats();
+  const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
+  const { overallStats, addRoundsPlayed, addNetCredits } = useOverallStats();
 
   useEffect(() => {
     if (!state) {
@@ -40,13 +40,7 @@ export default function Exploration() {
     setIsProcessing(false);
   }, [state.round, state.numOptions]);
 
-  // Update session stats based on current state
-  useEffect(() => {
-    if (state) {
-      updateSessionRounds(state.round);
-      updateSessionCredits(state.credits);
-    }
-  }, [state, updateSessionRounds, updateSessionCredits]);
+  // This effect is removed as stats are updated only when game ends
 
   if (!state) return null;
 
@@ -95,9 +89,15 @@ export default function Exploration() {
 
       if (newRound > state.maxRounds) {
         console.log("Game completed! Navigating to victory");
-        // Update overall stats for completed game
+        // Calculate net credits for completed game
+        const creditsSpent = state.credits; // Assuming initial credits were spent
+        const netCredits = newScore - creditsSpent;
+        
+        // Update stats for completed game
+        addSessionRounds(state.maxRounds);
+        addSessionCredits(netCredits);
         addRoundsPlayed(state.maxRounds);
-        addCreditsWon(newScore);
+        addNetCredits(netCredits);
         
         // Successfully completed all rounds - navigate immediately
         navigate("/victory", {

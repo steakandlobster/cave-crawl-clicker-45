@@ -25,12 +25,32 @@ export default function GameOver() {
   };
 
   return (
-    <div className="min-h-screen cave-background flex items-center justify-center p-4">
-      <Card className="max-w-md w-full p-8 text-center animate-slide-in shadow-deep">
+    <div className="min-h-screen cave-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Falling rocks animation */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {Array.from({ length: 20 }, (_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-cave-stone rounded-full animate-bounce"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${2 + Math.random() * 3}s`,
+              top: '-20px',
+              transform: `translateY(${100 + Math.random() * 50}vh)`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Brighter overlay for readability */}
+      <div className="absolute inset-0 bg-background/60" />
+      
+      <Card className="max-w-md w-full p-8 text-center animate-slide-in shadow-deep relative z-10 bg-card/95 backdrop-blur-sm">
         <div className="mb-6">
           <Skull className="w-20 h-20 mx-auto mb-4 text-destructive animate-glow-pulse" />
-          <h1 className="text-4xl font-bold mb-2 text-destructive">Game Over!</h1>
-          <p className="text-muted-foreground">{state.reason}</p>
+          <h1 className="text-4xl font-bold mb-2 text-destructive">Cave-In!</h1>
+          <p className="text-foreground">{state.reason}</p>
         </div>
 
         <div className="space-y-4 mb-8">

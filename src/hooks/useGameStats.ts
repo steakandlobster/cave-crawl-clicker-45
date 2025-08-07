@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 
 interface SessionStats {
   sessionRounds: number;
-  sessionCredits: number;
+  sessionCredits: number; // Net credits (score - credits spent)
 }
 
 interface OverallStats {
   totalGamesPlayed: number;
   totalRoundsPlayed: number;
-  totalCreditsWon: number;
+  totalNetCredits: number; // Net credits (score - credits spent)
 }
 
 export const useSessionStats = () => {
@@ -17,17 +17,35 @@ export const useSessionStats = () => {
     sessionCredits: 0,
   });
 
-  const updateSessionRounds = (rounds: number) => {
+  // Load session stats from localStorage on mount
+  useEffect(() => {
+    const savedSessionStats = localStorage.getItem('cave-explorer-session-stats');
+    if (savedSessionStats) {
+      try {
+        const parsed = JSON.parse(savedSessionStats);
+        setSessionStats(parsed);
+      } catch (error) {
+        console.warn('Failed to parse saved session stats:', error);
+      }
+    }
+  }, []);
+
+  // Save session stats to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('cave-explorer-session-stats', JSON.stringify(sessionStats));
+  }, [sessionStats]);
+
+  const addSessionRounds = (rounds: number) => {
     setSessionStats(prev => ({
       ...prev,
-      sessionRounds: rounds,
+      sessionRounds: prev.sessionRounds + rounds,
     }));
   };
 
-  const updateSessionCredits = (credits: number) => {
+  const addSessionCredits = (netCredits: number) => {
     setSessionStats(prev => ({
       ...prev,
-      sessionCredits: credits,
+      sessionCredits: prev.sessionCredits + netCredits,
     }));
   };
 
@@ -36,12 +54,13 @@ export const useSessionStats = () => {
       sessionRounds: 0,
       sessionCredits: 0,
     });
+    localStorage.removeItem('cave-explorer-session-stats');
   };
 
   return {
     sessionStats,
-    updateSessionRounds,
-    updateSessionCredits,
+    addSessionRounds,
+    addSessionCredits,
     resetSession,
   };
 };
@@ -50,7 +69,7 @@ export const useOverallStats = () => {
   const [overallStats, setOverallStats] = useState<OverallStats>({
     totalGamesPlayed: 0,
     totalRoundsPlayed: 0,
-    totalCreditsWon: 0,
+    totalNetCredits: 0,
   });
 
   // Load stats from localStorage on mount
@@ -85,10 +104,10 @@ export const useOverallStats = () => {
     }));
   };
 
-  const addCreditsWon = (credits: number) => {
+  const addNetCredits = (netCredits: number) => {
     setOverallStats(prev => ({
       ...prev,
-      totalCreditsWon: prev.totalCreditsWon + credits,
+      totalNetCredits: prev.totalNetCredits + netCredits,
     }));
   };
 
@@ -96,6 +115,6 @@ export const useOverallStats = () => {
     overallStats,
     incrementGamesPlayed,
     addRoundsPlayed,
-    addCreditsWon,
+    addNetCredits,
   };
 };

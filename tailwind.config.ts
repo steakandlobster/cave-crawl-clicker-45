@@ -129,6 +129,16 @@ export default {
 						transform: 'translateY(0)', 
 						opacity: '1' 
 					}
+				},
+				'rock-fall': {
+					'0%': { 
+						transform: 'translateY(-100px) rotate(0deg)', 
+						opacity: '1' 
+					},
+					'100%': { 
+						transform: 'translateY(100vh) rotate(360deg)', 
+						opacity: '0' 
+					}
 				}
 			},
 			animation: {
@@ -136,7 +146,8 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
 				'container-flip': 'container-flip 0.6s ease-in-out',
-				'slide-in': 'slide-in 0.5s ease-out'
+				'slide-in': 'slide-in 0.5s ease-out',
+				'rock-fall': 'rock-fall 3s linear infinite'
 			}
 		}
 	},
