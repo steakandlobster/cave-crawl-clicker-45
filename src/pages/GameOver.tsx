@@ -28,18 +28,18 @@ export default function GameOver() {
     <div className="min-h-screen cave-background flex items-center justify-center p-4">
       <Card className="max-w-md w-full p-8 text-center animate-slide-in shadow-deep">
         <div className="mb-6">
-          <Skull className="w-20 h-20 mx-auto mb-4 text-red-400 animate-glow-pulse" />
-          <h1 className="text-4xl font-bold mb-2 text-red-400">Game Over!</h1>
+          <Skull className="w-20 h-20 mx-auto mb-4 text-destructive animate-glow-pulse" />
+          <h1 className="text-4xl font-bold mb-2 text-destructive">Game Over!</h1>
           <p className="text-muted-foreground">{state.reason}</p>
         </div>
 
         <div className="space-y-4 mb-8">
-          <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/20">
+          <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
             <p className="text-sm text-muted-foreground mb-1">Exploration ended at</p>
-            <p className="text-2xl font-bold text-red-400">Round {state.round}</p>
+            <p className="text-2xl font-bold text-destructive">Round {state.round}</p>
           </div>
 
-          <div className="bg-secondary/50 p-4 rounded-lg">
+          <div className="bg-secondary/50 p-4 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground mb-1">Final Score</p>
             <p className="text-xl font-bold text-treasure-gold">{state.totalScore} Gold</p>
           </div>

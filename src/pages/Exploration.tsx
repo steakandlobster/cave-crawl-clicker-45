@@ -38,6 +38,8 @@ export default function Exploration() {
     setSelectedOption(optionIndex);
     setIsProcessing(true);
 
+    console.log("Starting exploration for option:", optionIndex);
+
     // TODO: Replace with actual backend call
     try {
       // Simulate processing time
@@ -46,7 +48,10 @@ export default function Exploration() {
       const isSuccessful = Math.random() > 0.3; // 70% success chance
       const treasureFound = isSuccessful ? Math.floor(Math.random() * 50) + 25 : 0;
       
+      console.log("Exploration result:", { isSuccessful, treasureFound });
+      
       if (!isSuccessful) {
+        console.log("Navigating to game over");
         // Bad choice - navigate to game over immediately
         navigate("/game-over", {
           state: {
@@ -54,7 +59,8 @@ export default function Exploration() {
             round: state.round,
             totalScore: (state.score || 0),
             reason: "You encountered a dangerous trap!"
-          }
+          },
+          replace: true
         });
         return;
       }
@@ -62,12 +68,15 @@ export default function Exploration() {
       const newScore = (state.score || 0) + treasureFound;
       const newRound = state.round + 1;
 
+      console.log("Success! New score:", newScore, "New round:", newRound);
+
       toast({
         title: "Safe Passage!",
         description: `You found ${treasureFound} gold pieces and advanced safely!`,
       });
 
       if (newRound > state.maxRounds) {
+        console.log("Game completed! Navigating to victory");
         // Successfully completed all rounds - navigate immediately
         navigate("/victory", {
           state: {
@@ -75,23 +84,24 @@ export default function Exploration() {
             totalScore: newScore,
             roundsCompleted: state.maxRounds,
             initialCredits: state.credits
-          }
+          },
+          replace: true
         });
         return;
       }
 
-      // Continue to next round - navigate immediately after short delay
-      setTimeout(() => {
-        const nextNumOptions = Math.floor(Math.random() * 3) + 2; // 2-4 options
-        navigate("/exploration", {
-          state: {
-            ...state,
-            numOptions: nextNumOptions,
-            round: newRound,
-            score: newScore
-          }
-        });
-      }, 2000);
+      // Continue to next round - navigate immediately without delay
+      console.log("Continuing to next round");
+      const nextNumOptions = Math.floor(Math.random() * 3) + 2; // 2-4 options
+      navigate("/exploration", {
+        state: {
+          ...state,
+          numOptions: nextNumOptions,
+          round: newRound,
+          score: newScore
+        },
+        replace: true
+      });
 
     } catch (error) {
       console.error("Navigation error:", error);
