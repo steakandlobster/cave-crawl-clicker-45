@@ -8,9 +8,18 @@ interface GameHeaderProps {
   rounds: number;
   score: number;
   timeRemaining?: number;
+  sessionStats?: {
+    sessionRounds: number;
+    sessionCredits: number;
+  };
+  overallStats?: {
+    totalGamesPlayed: number;
+    totalRoundsPlayed: number;
+    totalCreditsWon: number;
+  };
 }
 
-export const GameHeader = ({ credits, rounds, score, timeRemaining }: GameHeaderProps) => {
+export const GameHeader = ({ credits, rounds, score, timeRemaining, sessionStats, overallStats }: GameHeaderProps) => {
   const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
 
   const togglePanel = (panel: string) => {
@@ -78,6 +87,27 @@ export const GameHeader = ({ credits, rounds, score, timeRemaining }: GameHeader
           </div>
         ))}
       </div>
+      
+      {/* Session and Overall Statistics */}
+      {(sessionStats || overallStats) && (
+        <div className="border-t border-border bg-secondary/20 p-3">
+          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+            {sessionStats && (
+              <div className="flex gap-4">
+                <span>Session: {sessionStats.sessionRounds} rounds</span>
+                <span>{sessionStats.sessionCredits} credits</span>
+              </div>
+            )}
+            {overallStats && (
+              <div className="flex gap-4 border-l border-border pl-4">
+                <span>Overall: {overallStats.totalGamesPlayed} games</span>
+                <span>{overallStats.totalRoundsPlayed} rounds</span>
+                <span>{overallStats.totalCreditsWon} credits won</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -128,4 +128,33 @@ All colors MUST be HSL.
     background: linear-gradient(180deg, hsl(var(--background) / 0.85), hsl(var(--background) / 0.95));
     pointer-events: none;
   }
+  
+  /* Animation classes */
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  .animate-glow-pulse {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes glowPulse {
+    0%, 100% {
+      text-shadow: 0 0 5px hsl(var(--treasure-gold) / 0.5);
+    }
+    50% {
+      text-shadow: 0 0 20px hsl(var(--treasure-gold) / 0.8), 0 0 30px hsl(var(--treasure-gold) / 0.6);
+    }
+  }
 }

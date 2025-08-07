@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GameHeader } from "@/components/GameHeader";
+import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { Pickaxe, Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,6 +14,9 @@ const Index = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [showStats, setShowStats] = useState(false);
+  
+  const { sessionStats, resetSession } = useSessionStats();
+  const { overallStats } = useOverallStats();
 
   const presetAmounts = [50, 100, 250];
 
@@ -37,6 +41,9 @@ const Index = () => {
       return;
     }
 
+    // Reset session stats when starting a new game
+    resetSession();
+    
     // TODO: Replace with actual backend call
     // For now, simulate backend response
     try {
@@ -71,6 +78,8 @@ const Index = () => {
           credits={0}
           rounds={0}
           score={0}
+          sessionStats={sessionStats}
+          overallStats={overallStats}
         />
         
         <div className="container mx-auto px-4 py-16 relative z-10">

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { GameHeader } from "@/components/GameHeader";
 import { ArrowLeft, Skull, Crown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import cave1 from "@/assets/cave-1.jpg";
 
 interface ExplorationState {
@@ -22,6 +23,9 @@ export default function Exploration() {
   
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const { sessionStats, updateSessionRounds, updateSessionCredits } = useSessionStats();
+  const { overallStats, addRoundsPlayed, addCreditsWon } = useOverallStats();
 
   useEffect(() => {
     if (!state) {
@@ -29,6 +33,20 @@ export default function Exploration() {
       return;
     }
   }, [state, navigate]);
+
+  // Reset component state when navigation state changes (fixes stuck exploring bug)
+  useEffect(() => {
+    setSelectedOption(null);
+    setIsProcessing(false);
+  }, [state.round, state.numOptions]);
+
+  // Update session stats based on current state
+  useEffect(() => {
+    if (state) {
+      updateSessionRounds(state.round);
+      updateSessionCredits(state.credits);
+    }
+  }, [state, updateSessionRounds, updateSessionCredits]);
 
   if (!state) return null;
 
@@ -77,6 +95,10 @@ export default function Exploration() {
 
       if (newRound > state.maxRounds) {
         console.log("Game completed! Navigating to victory");
+        // Update overall stats for completed game
+        addRoundsPlayed(state.maxRounds);
+        addCreditsWon(newScore);
+        
         // Successfully completed all rounds - navigate immediately
         navigate("/victory", {
           state: {
@@ -126,6 +148,8 @@ export default function Exploration() {
           credits={state.credits}
           rounds={state.round}
           score={state.score || 0}
+          sessionStats={sessionStats}
+          overallStats={overallStats}
         />
         
         <div className="container mx-auto px-4 py-8 relative z-10">

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { GameHeader } from "@/components/GameHeader";
 import { CaveContainer } from "@/components/CaveContainer";
 import { GameOverScreen } from "@/components/GameOverScreen";
+import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { toast } from "@/hooks/use-toast";
 
 interface GameState {
@@ -27,6 +28,9 @@ export default function Game() {
   const navigate = useNavigate();
   const location = useLocation();
   const initialCredits = location.state?.credits || 100;
+  
+  const { sessionStats, updateSessionRounds, updateSessionCredits } = useSessionStats();
+  const { overallStats, incrementGamesPlayed, addRoundsPlayed, addCreditsWon } = useOverallStats();
 
   const [gameState, setGameState] = useState<GameState>({
     credits: initialCredits,
@@ -57,7 +61,15 @@ export default function Game() {
       ...prev,
       caves: generateCaves(),
     }));
-  }, []);
+    // Increment games played when starting a new game
+    incrementGamesPlayed();
+  }, [incrementGamesPlayed]);
+
+  // Update session stats based on current game state
+  useEffect(() => {
+    updateSessionRounds(gameState.rounds);
+    updateSessionCredits(gameState.credits);
+  }, [gameState.rounds, gameState.credits, updateSessionRounds, updateSessionCredits]);
 
   const handleCaveClick = (caveId: number) => {
     if (gameState.isGameOver) return;
@@ -104,6 +116,10 @@ export default function Game() {
       }
 
       if (isGameOver) {
+        // Update overall stats when game ends
+        addRoundsPlayed(newRounds);
+        addCreditsWon(newScore);
+        
         setTimeout(() => {
           setGameState(current => ({ ...current, isGameOver: true }));
         }, 1500);
@@ -155,6 +171,8 @@ export default function Game() {
         credits={gameState.credits}
         rounds={gameState.rounds}
         score={gameState.score}
+        sessionStats={sessionStats}
+        overallStats={overallStats}
       />
       
       <div className="container mx-auto px-4 py-8">
