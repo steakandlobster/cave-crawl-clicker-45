@@ -3,12 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { GameHeader } from "@/components/GameHeader";
+import { CaveProgressionFlash } from "@/components/CaveProgressionFlash";
 import { ArrowLeft, Skull, Crown, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
-import caveLowRisk from "@/assets/cave-low-risk.jpg";
-import caveMediumRisk from "@/assets/cave-medium-risk.jpg";
-import caveHighRisk from "@/assets/cave-high-risk.jpg";
+import { getCaveImage } from "@/lib/cave-images";
 
 interface ExplorationState {
   credits: number;
@@ -26,6 +25,8 @@ export default function Exploration() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [useInsurance, setUseInsurance] = useState(false);
+  const [showProgression, setShowProgression] = useState(false);
+  const [usedImages, setUsedImages] = useState<string[]>([]);
   
   const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
   const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed } = useOverallStats();
@@ -46,6 +47,7 @@ export default function Exploration() {
   useEffect(() => {
     setSelectedOption(null);
     setIsProcessing(false);
+    setUsedImages([]); // Reset used images for each round
   }, [state.round, state.numOptions]);
 
   // This effect is removed as stats are updated only when game ends
@@ -104,7 +106,14 @@ export default function Exploration() {
         description: `You found ${treasureFound} gold pieces and advanced safely!`,
       });
 
-      if (newRound > state.maxRounds) {
+      // Show progression flash before continuing
+      setShowProgression(true);
+      
+      // Handle game completion or next round after progression flash
+      const handleProgressionComplete = () => {
+        setShowProgression(false);
+        
+        if (newRound > state.maxRounds) {
         console.log("Game completed! Navigating to victory");
         // Calculate net credits for completed game
         const creditsSpent = state.credits; // Assuming initial credits were spent
@@ -116,31 +125,35 @@ export default function Exploration() {
         addRoundsPlayed(state.maxRounds);
         addNetCredits(netCredits);
         
-        // Successfully completed all rounds - navigate immediately
-        navigate("/victory", {
+          // Successfully completed all rounds - navigate immediately
+          navigate("/victory", {
+            state: {
+              success: true,
+              totalScore: newScore,
+              roundsCompleted: state.maxRounds,
+              initialCredits: state.credits
+            },
+            replace: true
+          });
+          return;
+        }
+
+        // Continue to next round - navigate immediately without delay
+        console.log("Continuing to next round");
+        const nextNumOptions = Math.floor(Math.random() * 3) + 2; // 2-4 options
+        navigate("/exploration", {
           state: {
-            success: true,
-            totalScore: newScore,
-            roundsCompleted: state.maxRounds,
-            initialCredits: state.credits
+            ...state,
+            numOptions: nextNumOptions,
+            round: newRound,
+            score: newScore
           },
           replace: true
         });
-        return;
-      }
-
-      // Continue to next round - navigate immediately without delay
-      console.log("Continuing to next round");
-      const nextNumOptions = Math.floor(Math.random() * 3) + 2; // 2-4 options
-      navigate("/exploration", {
-        state: {
-          ...state,
-          numOptions: nextNumOptions,
-          round: newRound,
-          score: newScore
-        },
-        replace: true
-      });
+      };
+      
+      // Store the completion handler for the progression flash
+      (window as any).progressionCompleteHandler = handleProgressionComplete;
 
     } catch (error) {
       console.error("Navigation error:", error);
@@ -164,7 +177,6 @@ export default function Exploration() {
         <GameHeader
           credits={state.credits}
           rounds={state.round}
-          score={state.score || 0}
           sessionStats={sessionStats}
           overallStats={overallStats}
         />
@@ -212,15 +224,16 @@ export default function Exploration() {
             <div className="space-y-4 mb-8">
               {Array.from({ length: state.numOptions }, (_, index) => {
                 const riskLevels = ['low', 'medium', 'high'];
-                const riskLevel = riskLevels[index % 3];
-                const getRiskImage = (risk: string) => {
-                  switch (risk) {
-                    case 'low': return caveLowRisk;
-                    case 'medium': return caveMediumRisk;
-                    case 'high': return caveHighRisk;
-                    default: return caveLowRisk;
-                  }
-                };
+                const riskLevel = riskLevels[index % 3] as 'low' | 'medium' | 'high';
+                
+                // Get unique image for this option, avoiding duplicates in this round
+                const imageUrl = getCaveImage(riskLevel, usedImages);
+                
+                // Track this image as used
+                if (!usedImages.includes(imageUrl)) {
+                  setUsedImages(prev => [...prev, imageUrl]);
+                }
+                
                 const getRiskText = (risk: string) => {
                   switch (risk) {
                     case 'low': return 'Safe Path';
@@ -251,7 +264,7 @@ export default function Exploration() {
                     <div className="w-full h-full relative flex">
                       <div className="w-48 h-full">
                         <img
-                          src={getRiskImage(riskLevel)}
+                          src={imageUrl}
                           alt={`${getRiskText(riskLevel)} - Cave passage ${index + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -284,13 +297,9 @@ export default function Exploration() {
               })}
             </div>
 
-            {/* Current Round Stats */}
+            {/* Current Round Stats - Removed score */}
             <Card className="p-4 bg-secondary/30 border-border/50 backdrop-blur-sm mb-6">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-sm text-muted-foreground">Current Score</p>
-                  <p className="text-lg font-bold text-treasure-gold">{state.score || 0}</p>
-                </div>
+              <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Round</p>
                   <p className="text-lg font-bold">{state.round} / {state.maxRounds}</p>
@@ -315,6 +324,17 @@ export default function Exploration() {
           </div>
         </div>
       </div>
+      
+      {/* Cave Progression Flash */}
+      {showProgression && (
+        <CaveProgressionFlash 
+          onComplete={() => {
+            if ((window as any).progressionCompleteHandler) {
+              (window as any).progressionCompleteHandler();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

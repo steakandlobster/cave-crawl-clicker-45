@@ -18,7 +18,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        treasure: "bg-gradient-treasure text-primary-foreground hover:scale-105 shadow-treasure animate-glow-pulse font-bold",
+        treasure: "bg-gradient-treasure text-primary-foreground hover:scale-105 shadow-treasure font-bold",
         cave: "bg-cave-deep text-foreground border border-cave-stone hover:bg-cave-stone hover:shadow-glow",
         game: "bg-card text-card-foreground border border-border hover:border-primary hover:bg-secondary/50 hover:shadow-glow transition-all duration-300",
       },

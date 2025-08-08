@@ -172,7 +172,6 @@ export default function Game() {
       <GameHeader
         credits={gameState.credits}
         rounds={gameState.rounds}
-        score={gameState.score}
         sessionStats={sessionStats}
         overallStats={overallStats}
       />

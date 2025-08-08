@@ -76,7 +76,6 @@ const Index = () => {
         <GameHeader
           credits={0}
           rounds={0}
-          score={0}
           sessionStats={sessionStats}
           overallStats={overallStats}
         />

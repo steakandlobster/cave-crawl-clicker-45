@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ChevronDown, Coins, Trophy, Target, Clock } from "lucide-react";
+import { ChevronDown, Coins, Map, Clock } from "lucide-react";
 
 interface GameHeaderProps {
   credits: number;
   rounds: number;
-  score: number;
   timeRemaining?: number;
   sessionStats?: {
     sessionRounds: number;
@@ -19,96 +17,102 @@ interface GameHeaderProps {
   };
 }
 
-export const GameHeader = ({ credits, rounds, score, timeRemaining, sessionStats, overallStats }: GameHeaderProps) => {
-  const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
-
-  const togglePanel = (panel: string) => {
-    setExpandedPanel(expandedPanel === panel ? null : panel);
-  };
-
-  const panels = [
-    {
-      id: "credits",
-      label: "Credits",
-      value: credits,
-      icon: Coins,
-      details: `Current cave exploration credits: ${credits}`,
-    },
-    {
-      id: "rounds",
-      label: "Rounds",
-      value: rounds,
-      icon: Target,
-      details: `Caves explored this session: ${rounds}`,
-    },
-    {
-      id: "score",
-      label: "Score",
-      value: score,
-      icon: Trophy,
-      details: `Total treasure found: ${score} gold pieces`,
-    },
-  ];
-
-  if (timeRemaining !== undefined) {
-    panels.push({
-      id: "time",
-      label: "Time",
-      value: timeRemaining,
-      icon: Clock,
-      details: `Time remaining: ${timeRemaining}s`,
-    });
-  }
+export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overallStats }: GameHeaderProps) => {
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   return (
-    <div className="w-full bg-card border-b border-border">
-      {/* Session and Overall Statistics at top */}
-      {(sessionStats || overallStats) && (
-        <div className="border-b border-border bg-secondary/20 p-3">
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+    <header className="border-b border-border/50 bg-secondary/30 backdrop-blur-sm relative z-20">
+      {/* Leaderboard Dropdown Panel */}
+      {isLeaderboardOpen && (sessionStats || overallStats) && (
+        <div className="p-4 bg-secondary/50 border-b border-border/30">
+          <h3 className="text-sm font-semibold mb-3 text-center">Leaderboard</h3>
+          <div className="grid grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {/* Current Session Column */}
             {sessionStats && (
-              <div className="flex gap-4">
-                <span>Session: {sessionStats.sessionRounds} rounds</span>
-                <span>{sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits} net credits</span>
+              <div className="text-center">
+                <h4 className="text-xs font-semibold mb-3 text-muted-foreground">Current Session</h4>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Games</p>
+                    <p className="text-lg font-bold">1</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Paths Explored</p>
+                    <p className="text-lg font-bold">{sessionStats.sessionRounds}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Cumulative Gain/Loss</p>
+                    <p className={`text-lg font-bold ${sessionStats.sessionCredits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* Overall Column */}
             {overallStats && (
-              <div className="flex gap-4 border-l border-border pl-4">
-                <span>Overall: {overallStats.totalGamesPlayed} games</span>
-                <span>{overallStats.totalRoundsPlayed} rounds</span>
-                <span>{overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits} net credits</span>
+              <div className="text-center">
+                <h4 className="text-xs font-semibold mb-3 text-muted-foreground">Overall</h4>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Games Played</p>
+                    <p className="text-lg font-bold">{overallStats.totalGamesPlayed}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Paths Explored</p>
+                    <p className="text-lg font-bold">{overallStats.totalRoundsPlayed}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Gain/Loss</p>
+                    <p className={`text-lg font-bold ${overallStats.totalNetCredits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
-      
-      {/* Current game stats at bottom */}
-      <div className="flex flex-wrap gap-2 p-4">
-        {panels.map((panel) => (
-          <div key={panel.id} className="relative">
-            <Button
-              variant="game"
-              size="sm"
-              onClick={() => togglePanel(panel.id)}
-              className="flex items-center gap-2"
-            >
-              <panel.icon className="w-4 h-4" />
-              {panel.label}: {panel.value}
-              <ChevronDown
-                className={`w-3 h-3 transition-transform ${
-                  expandedPanel === panel.id ? "rotate-180" : ""
-                }`}
-              />
-            </Button>
-            {expandedPanel === panel.id && (
-              <Card className="absolute top-full left-0 mt-2 p-3 min-w-64 z-10 animate-slide-in shadow-glow">
-                <p className="text-sm text-muted-foreground">{panel.details}</p>
-              </Card>
+
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Left side - Basic game info without score */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1">
+              <Coins className="w-4 h-4 text-treasure-gold" />
+              <span className="text-sm font-medium">{credits}</span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Map className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium">{rounds}</span>
+            </div>
+
+            {/* Leaderboard Button */}
+            {(sessionStats || overallStats) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
+                className="text-xs"
+              >
+                Leaderboard
+                <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isLeaderboardOpen ? 'rotate-180' : ''}`} />
+              </Button>
             )}
           </div>
-        ))}
+
+          {/* Right side - Time remaining if provided */}
+          {timeRemaining !== undefined && (
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4 text-orange-400" />
+              <span className="text-sm font-medium">{timeRemaining}s</span>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </header>
   );
 };
