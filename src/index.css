@@ -125,7 +125,7 @@ All colors MUST be HSL.
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(180deg, hsl(var(--background) / 0.85), hsl(var(--background) / 0.95));
+    background: linear-gradient(180deg, hsl(var(--background) / 0.75), hsl(var(--background) / 0.85));
     pointer-events: none;
   }
   

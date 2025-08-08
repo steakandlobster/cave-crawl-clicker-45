@@ -41,8 +41,7 @@ const Index = () => {
       return;
     }
 
-    // Reset session stats when starting a new game
-    resetSession();
+    // Don't reset session stats - they should persist across games
     
     // TODO: Replace with actual backend call
     // For now, simulate backend response
@@ -84,19 +83,8 @@ const Index = () => {
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="max-w-4xl mx-auto">
-            {/* Hero Section with Cave Image */}
+            {/* Hero Section */}
             <div className="text-center mb-12">
-              <div className="relative mb-8">
-                <img 
-                  src="https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=800&h=400&fit=crop" 
-                  alt="Mysterious cave entrance surrounded by rock formations"
-                  className="w-full max-w-2xl mx-auto rounded-lg shadow-deep object-cover h-64"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Pickaxe className="w-20 h-20 text-treasure-gold animate-glow-pulse" />
-                </div>
-              </div>
               <h1 className="text-5xl font-bold mb-4 text-treasure-gold">
                 Cave Explorer
               </h1>
@@ -104,7 +92,7 @@ const Index = () => {
                 Venture into mysterious caves to discover hidden treasures!
               </p>
               <p className="text-sm text-muted-foreground">
-                Each cave exploration costs 10 credits. Survive 6 rounds to win!
+                Each game lasts 1 round regardless of credits wagered.
               </p>
             </div>
 
@@ -170,24 +158,11 @@ const Index = () => {
                       )}
                     </Button>
                     
-                    {getAmountForButton() > 0 && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        This will allow {Math.floor(getAmountForButton() / 10)} cave explorations
-                      </p>
-                    )}
                   </div>
                 </div>
               </Card>
             </div>
 
-            <div className="mt-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                💡 Tip: Start with 100 credits for a balanced exploration experience
-              </p>
-              <p className="text-xs text-muted-foreground mt-2 opacity-75">
-                Note: Backend integration required for full multiplayer experience
-              </p>
-            </div>
           </div>
         </div>
       </div>

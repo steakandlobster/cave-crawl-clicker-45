@@ -54,7 +54,11 @@ export const useSessionStats = () => {
       sessionRounds: 0,
       sessionCredits: 0,
     });
-    localStorage.removeItem('cave-explorer-session-stats');
+    // Don't remove from localStorage, just reset the state
+    localStorage.setItem('cave-explorer-session-stats', JSON.stringify({
+      sessionRounds: 0,
+      sessionCredits: 0,
+    }));
   };
 
   return {

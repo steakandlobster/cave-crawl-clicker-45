@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skull, RotateCcw, Home } from "lucide-react";
+import { Skull, RotateCcw } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import caveCollapse from "@/assets/cave-collapse.jpg";
 
 interface GameOverState {
   success: boolean;
@@ -25,17 +26,23 @@ export default function GameOver() {
   };
 
   return (
-    <div className="min-h-screen cave-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+      {/* Cave collapse background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${caveCollapse})` }}
+      />
+      
       {/* Falling rocks animation */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {Array.from({ length: 20 }, (_, i) => (
+        {Array.from({ length: 30 }, (_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-cave-stone rounded-full animate-bounce"
+            className="absolute w-3 h-3 bg-cave-stone rounded-full animate-bounce opacity-80"
             style={{
               left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 3}s`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${1.5 + Math.random() * 2}s`,
               top: '-20px',
               transform: `translateY(${100 + Math.random() * 50}vh)`,
             }}
@@ -43,8 +50,8 @@ export default function GameOver() {
         ))}
       </div>
       
-      {/* Brighter overlay for readability */}
-      <div className="absolute inset-0 bg-background/60" />
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-background/70" />
       
       <Card className="max-w-md w-full p-8 text-center animate-slide-in shadow-deep relative z-10 bg-card/95 backdrop-blur-sm">
         <div className="mb-6">
@@ -61,7 +68,7 @@ export default function GameOver() {
 
           <div className="bg-secondary/50 p-4 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground mb-1">Final Score</p>
-            <p className="text-xl font-bold text-treasure-gold">{state.totalScore} Gold</p>
+            <p className="text-xl font-bold text-treasure-gold">0 Gold</p>
           </div>
         </div>
 
@@ -74,15 +81,6 @@ export default function GameOver() {
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Try Again
-          </Button>
-          <Button
-            variant="cave"
-            size="lg"
-            onClick={() => navigate("/")}
-            className="w-full"
-          >
-            <Home className="w-4 h-4 mr-2" />
-            Return Home
           </Button>
         </div>
 

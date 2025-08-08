@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Crown, Trophy, Coins, RotateCcw, Home } from "lucide-react";
+import { Crown, Trophy, Coins, RotateCcw } from "lucide-react";
 import caveOpening from "@/assets/cave-opening.jpg";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -81,16 +81,7 @@ export default function Victory() {
             className="w-full"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
-            Explore New Caves
-          </Button>
-          <Button
-            variant="cave"
-            size="lg"
-            onClick={() => navigate("/")}
-            className="w-full"
-          >
-            <Home className="w-4 h-4 mr-2" />
-            Return to Base Camp
+            Try Again
           </Button>
         </div>
 
