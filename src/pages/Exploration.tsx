@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { GameHeader } from "@/components/GameHeader";
 import { CaveProgressionFlash } from "@/components/CaveProgressionFlash";
+import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { ArrowLeft, Skull, Crown, Shield } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { getCaveImage } from "@/lib/cave-images";
 
@@ -26,11 +27,35 @@ export default function Exploration() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [useInsurance, setUseInsurance] = useState(false);
   const [showProgression, setShowProgression] = useState(false);
-  const [usedImages, setUsedImages] = useState<string[]>([]);
   const [progressionCompleteHandler, setProgressionCompleteHandler] = useState<() => void>(() => () => {});
+  const [currentToastId, setCurrentToastId] = useState<string | null>(null);
   
   const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
   const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed } = useOverallStats();
+  const { dismiss } = useToast();
+
+  // Memoize cave images to prevent them from changing during processing
+  const stableCaveImages = useMemo(() => {
+    const images: string[] = [];
+    const usedInThisRound: string[] = [];
+    
+    for (let i = 0; i < state.numOptions; i++) {
+      const riskLevels = ['low', 'medium', 'high'];
+      const riskLevel = riskLevels[i % 3] as 'low' | 'medium' | 'high';
+      
+      // Get unique image for this option, avoiding duplicates in this round
+      const imageUrl = getCaveImage(riskLevel, usedInThisRound);
+      images.push(imageUrl);
+      usedInThisRound.push(imageUrl);
+    }
+    
+    return images;
+  }, [state.round, state.numOptions]); // Only re-generate when round or numOptions changes
+
+  // Stable reference to incrementGamesPlayed to prevent infinite re-renders
+  const stableIncrementGamesPlayed = useCallback(() => {
+    incrementGamesPlayed();
+  }, []);
 
   useEffect(() => {
     if (!state) {
@@ -40,23 +65,15 @@ export default function Exploration() {
     
     // Track game start on first round only
     if (state.round === 1) {
-      incrementGamesPlayed();
+      stableIncrementGamesPlayed();
     }
-  }, [state, navigate, incrementGamesPlayed]);
+  }, [state?.round, navigate]); // Remove incrementGamesPlayed from dependencies
 
   // Reset component state when navigation state changes (fixes stuck exploring bug)
   useEffect(() => {
     setSelectedOption(null);
     setIsProcessing(false);
-    // Don't reset usedImages here - keep them stable during processing
   }, [state.round, state.numOptions]);
-
-  // Reset usedImages only when starting a new round (not during processing)
-  useEffect(() => {
-    if (!isProcessing) {
-      setUsedImages([]);
-    }
-  }, [state.round]);
 
   // This effect is removed as stats are updated only when game ends
 
@@ -109,10 +126,11 @@ export default function Exploration() {
 
       console.log("Success! New score:", newScore, "New round:", newRound);
 
-      toast({
+      const toastResult = toast({
         title: "Safe Passage!",
         description: `You found ${treasureFound} gold pieces and advanced safely!`,
       });
+      setCurrentToastId(toastResult.id);
 
       // Show progression flash before continuing
       setShowProgression(true);
@@ -120,6 +138,12 @@ export default function Exploration() {
       // Handle game completion or next round after progression flash
       const handleProgressionComplete = () => {
         setShowProgression(false);
+        
+        // Clear the toast when progression completes
+        if (currentToastId) {
+          dismiss(currentToastId);
+          setCurrentToastId(null);
+        }
         
         if (newRound > state.maxRounds) {
         console.log("Game completed! Navigating to victory");
@@ -190,6 +214,11 @@ export default function Exploration() {
         />
         
         <div className="container mx-auto px-4 py-8 relative z-10">
+          {/* Global Leaderboard */}
+          <div className="fixed top-4 right-4 z-20">
+            <GlobalLeaderboard />
+          </div>
+          
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
@@ -234,13 +263,8 @@ export default function Exploration() {
                 const riskLevels = ['low', 'medium', 'high'];
                 const riskLevel = riskLevels[index % 3] as 'low' | 'medium' | 'high';
                 
-                // Get unique image for this option, avoiding duplicates in this round
-                const imageUrl = getCaveImage(riskLevel, usedImages);
-                
-                // Track this image as used
-                if (!usedImages.includes(imageUrl)) {
-                  setUsedImages(prev => [...prev, imageUrl]);
-                }
+                // Use stable image from memoized array
+                const imageUrl = stableCaveImages[index];
                 
                 const getRiskText = (risk: string) => {
                   switch (risk) {
