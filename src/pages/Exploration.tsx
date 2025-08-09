@@ -48,8 +48,15 @@ export default function Exploration() {
   useEffect(() => {
     setSelectedOption(null);
     setIsProcessing(false);
-    setUsedImages([]); // Reset used images for each round
+    // Don't reset usedImages here - keep them stable during processing
   }, [state.round, state.numOptions]);
+
+  // Reset usedImages only when starting a new round (not during processing)
+  useEffect(() => {
+    if (!isProcessing) {
+      setUsedImages([]);
+    }
+  }, [state.round]);
 
   // This effect is removed as stats are updated only when game ends
 
