@@ -27,6 +27,7 @@ export default function Exploration() {
   const [useInsurance, setUseInsurance] = useState(false);
   const [showProgression, setShowProgression] = useState(false);
   const [usedImages, setUsedImages] = useState<string[]>([]);
+  const [progressionCompleteHandler, setProgressionCompleteHandler] = useState<() => void>(() => () => {});
   
   const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
   const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed } = useOverallStats();
@@ -152,8 +153,8 @@ export default function Exploration() {
         });
       };
       
-      // Store the completion handler for the progression flash
-      (window as any).progressionCompleteHandler = handleProgressionComplete;
+      // Store the completion handler
+      setProgressionCompleteHandler(() => handleProgressionComplete);
 
     } catch (error) {
       console.error("Navigation error:", error);
@@ -328,11 +329,7 @@ export default function Exploration() {
       {/* Cave Progression Flash */}
       {showProgression && (
         <CaveProgressionFlash 
-          onComplete={() => {
-            if ((window as any).progressionCompleteHandler) {
-              (window as any).progressionCompleteHandler();
-            }
-          }}
+          onComplete={progressionCompleteHandler}
         />
       )}
     </div>
