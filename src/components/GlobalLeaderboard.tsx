@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ export const GlobalLeaderboard = () => {
   }, [isOpen, sessionStats, overallStats]);
 
   const formatCredits = (credits: number) => {
-    return credits >= 0 ? `+${credits}` : `${credits}`;
+    return credits >= 0 ? `+${credits.toFixed(3)}` : `${credits.toFixed(3)}`;
   };
 
   const getCreditsColor = (credits: number) => {
@@ -132,14 +133,14 @@ export const GlobalLeaderboard = () => {
         variant="treasure"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 z-50 relative"
       >
         <Trophy className="w-4 h-4" />
         Leaderboard
       </Button>
 
       {isOpen && (
-        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-background/95 backdrop-blur-sm border-border/50 z-30">
+        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-background/95 backdrop-blur-sm border-border/50 z-50">
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Trophy className="w-5 h-5 text-treasure-gold" />
@@ -193,7 +194,7 @@ export const GlobalLeaderboard = () => {
                         )}`}>
                           {formatCredits(
                             activeTab === 'daily' ? entry.daily_net_credits : entry.total_net_credits
-                          )}
+                          )} ETH
                         </span>
                       </div>
                     </div>
@@ -220,7 +221,7 @@ export const GlobalLeaderboard = () => {
                             )}`}>
                               {formatCredits(
                                 activeTab === 'daily' ? userStats.daily_net_credits : userStats.total_net_credits
-                              )}
+                              )} ETH
                             </span>
                           </div>
                         </div>

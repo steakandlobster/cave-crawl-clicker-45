@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,8 @@ export default function Exploration() {
   useEffect(() => {
     setSelectedOption(null);
     setIsProcessing(false);
+    setUseInsurance(false); // Reset insurance each round
   }, [state.round, state.numOptions]);
-
-  // This effect is removed as stats are updated only when game ends
 
   if (!state) return null;
 
@@ -93,7 +93,7 @@ export default function Exploration() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const isSuccessful = Math.random() > 0.3; // 70% success chance
-      const treasureFound = isSuccessful ? Math.floor(Math.random() * 50) + 25 : 0;
+      const treasureFound = isSuccessful ? (Math.random() * 0.05 + 0.025) : 0; // 0.025-0.075 ETH
       
       console.log("Exploration result:", { isSuccessful, treasureFound });
       
@@ -101,7 +101,7 @@ export default function Exploration() {
         console.log("Navigating to game over");
         // Update stats for failed game
         const creditsSpent = state.credits;
-        const netCredits = 0 - creditsSpent; // Loss = negative credits
+        const netCredits = (state.score || 0) - creditsSpent; // Current winnings - initial bet
         
         addSessionRounds(1);
         addSessionCredits(netCredits);
@@ -113,7 +113,7 @@ export default function Exploration() {
           state: {
             success: false,
             round: state.round,
-            totalScore: 0,
+            totalScore: state.score || 0,
             reason: useInsurance ? "Insurance protected you, but no treasure found!" : "You encountered a dangerous trap!"
           },
           replace: true
@@ -128,7 +128,8 @@ export default function Exploration() {
 
       const toastResult = toast({
         title: "Safe Passage!",
-        description: `You found ${treasureFound} gold pieces and advanced safely!`,
+        description: `You found ${treasureFound.toFixed(3)} ETH and advanced safely!`,
+        duration: 2000, // 2 seconds
       });
       setCurrentToastId(toastResult.id);
 
@@ -148,7 +149,7 @@ export default function Exploration() {
         if (newRound > state.maxRounds) {
         console.log("Game completed! Navigating to victory");
         // Calculate net credits for completed game
-        const creditsSpent = state.credits; // Assuming initial credits were spent
+        const creditsSpent = state.credits; // Initial bet
         const netCredits = newScore - creditsSpent;
         
         // Update stats for completed game
@@ -215,7 +216,7 @@ export default function Exploration() {
         
         <div className="container mx-auto px-4 py-8 relative z-10">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4 z-20">
+          <div className="fixed top-4 right-4 z-50">
             <GlobalLeaderboard />
           </div>
           
@@ -253,7 +254,7 @@ export default function Exploration() {
                 disabled={isProcessing}
               >
                 <Shield className="w-5 h-5" />
-                {useInsurance ? "Insurance Active" : "Purchase Insurance"}
+                {useInsurance ? "Insurance Active (This Round)" : "Purchase Insurance (This Round Only)"}
               </Button>
             </div>
 
@@ -329,16 +330,20 @@ export default function Exploration() {
               })}
             </div>
 
-            {/* Current Round Stats - Removed score */}
+            {/* Current Round Stats */}
             <Card className="p-4 bg-secondary/30 border-border/50 backdrop-blur-sm mb-6">
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Round</p>
                   <p className="text-lg font-bold">{state.round} / {state.maxRounds}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Credits</p>
-                  <p className="text-lg font-bold">{state.credits}</p>
+                  <p className="text-sm text-muted-foreground">Initial Bet</p>
+                  <p className="text-lg font-bold">{state.credits.toFixed(3)} ETH</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Current Winnings</p>
+                  <p className="text-lg font-bold text-treasure-gold">{(state.score || 0).toFixed(3)} ETH</p>
                 </div>
               </div>
             </Card>

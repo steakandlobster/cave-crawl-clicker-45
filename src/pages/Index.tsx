@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GameHeader } from "@/components/GameHeader";
+import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { Pickaxe, Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -18,24 +20,24 @@ const Index = () => {
   const { sessionStats, resetSession } = useSessionStats();
   const { overallStats } = useOverallStats();
 
-  const presetAmounts = [50, 100, 250];
+  const presetAmounts = [0.001, 0.01, 0.1];
 
   const handleStartGame = async () => {
-    const credits = selectedAmount || parseInt(customAmount);
+    const credits = selectedAmount || parseFloat(customAmount);
     
-    if (!credits || credits < 10) {
+    if (!credits || credits < 0.001) {
       toast({
         title: "Invalid Amount",
-        description: "Please select at least 10 credits to start exploring!",
+        description: "Please select at least 0.001 ETH to start exploring!",
         variant: "destructive",
       });
       return;
     }
 
-    if (credits > 1000) {
+    if (credits > 0.1) {
       toast({
         title: "Amount Too High",
-        description: "Maximum credits allowed is 1000.",
+        description: "Maximum ETH allowed is 0.1.",
         variant: "destructive",
       });
       return;
@@ -54,7 +56,8 @@ const Index = () => {
           credits, 
           numOptions,
           round: 1,
-          maxRounds: 6 
+          maxRounds: 6,
+          score: 0 // Start with 0 winnings
         } 
       });
     } catch (error) {
@@ -67,7 +70,7 @@ const Index = () => {
   };
 
   const getAmountForButton = () => {
-    return selectedAmount || parseInt(customAmount) || 0;
+    return selectedAmount || parseFloat(customAmount) || 0;
   };
 
   return (
@@ -81,6 +84,11 @@ const Index = () => {
         />
         
         <div className="container mx-auto px-4 py-16 relative z-10">
+          {/* Global Leaderboard */}
+          <div className="fixed top-4 right-4 z-50">
+            <GlobalLeaderboard />
+          </div>
+          
           <div className="max-w-4xl mx-auto">
             {/* Hero Section */}
             <div className="text-center mb-12">
@@ -88,10 +96,10 @@ const Index = () => {
                 Cave Explorer
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
-                Venture into mysterious caves to discover hidden treasures!
+                Venture into mysterious caves to discover hidden ETH treasures!
               </p>
               <p className="text-sm text-muted-foreground">
-                Each game lasts 1 round regardless of credits wagered.
+                Each game lasts up to 6 rounds. Win ETH by choosing safe paths!
               </p>
             </div>
 
@@ -100,7 +108,7 @@ const Index = () => {
                 <div className="space-y-6">
                   <div>
                     <Label className="text-lg font-semibold mb-4 block">
-                      Select Your Exploration Credits
+                      Select Your ETH Wager
                     </Label>
                     
                     <div className="grid grid-cols-3 gap-4 mb-6">
@@ -117,7 +125,7 @@ const Index = () => {
                         >
                           <Coins className="w-6 h-6 mb-1" />
                           <span className="text-lg font-bold">{amount}</span>
-                          <span className="text-xs opacity-80">credits</span>
+                          <span className="text-xs opacity-80">ETH</span>
                         </Button>
                       ))}
                     </div>
@@ -129,14 +137,15 @@ const Index = () => {
                       <Input
                         id="custom-amount"
                         type="number"
-                        placeholder="Enter credits (10-1000)"
+                        placeholder="Enter ETH (0.001-0.1)"
                         value={customAmount}
                         onChange={(e) => {
                           setCustomAmount(e.target.value);
                           setSelectedAmount(null);
                         }}
-                        min={10}
-                        max={1000}
+                        min={0.001}
+                        max={0.1}
+                        step={0.001}
                         className="mt-2 text-center text-lg"
                       />
                     </div>
@@ -153,7 +162,7 @@ const Index = () => {
                       <Map className="w-5 h-5 mr-2" />
                       Start Cave Exploration
                       {getAmountForButton() > 0 && (
-                        <span className="ml-2">({getAmountForButton()} credits)</span>
+                        <span className="ml-2">({getAmountForButton()} ETH)</span>
                       )}
                     </Button>
                     

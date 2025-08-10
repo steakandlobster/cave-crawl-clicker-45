@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import caveProgression from "@/assets/cave-progression.jpg";
 

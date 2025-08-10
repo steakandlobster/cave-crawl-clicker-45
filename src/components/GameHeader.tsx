@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Coins, Map, Clock } from "lucide-react";
@@ -25,7 +26,7 @@ export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overa
       {/* Leaderboard Dropdown Panel */}
       {isLeaderboardOpen && (sessionStats || overallStats) && (
         <div className="p-4 bg-secondary/50 border-b border-border/30">
-          <h3 className="text-sm font-semibold mb-3 text-center">Leaderboard</h3>
+          <h3 className="text-sm font-semibold mb-3 text-center">Statistics</h3>
           <div className="grid grid-cols-2 gap-6 max-w-2xl mx-auto">
             {/* Current Session Column */}
             {sessionStats && (
@@ -41,9 +42,9 @@ export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overa
                     <p className="text-lg font-bold">{sessionStats.sessionRounds}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Cumulative Gain/Loss</p>
+                    <p className="text-xs text-muted-foreground">Net Gain/Loss</p>
                     <p className={`text-lg font-bold ${sessionStats.sessionCredits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits}
+                      {sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits.toFixed(3)} ETH
                     </p>
                   </div>
                 </div>
@@ -64,9 +65,9 @@ export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overa
                     <p className="text-lg font-bold">{overallStats.totalRoundsPlayed}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Gain/Loss</p>
+                    <p className="text-xs text-muted-foreground">Net Gain/Loss</p>
                     <p className={`text-lg font-bold ${overallStats.totalNetCredits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits}
+                      {overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits.toFixed(3)} ETH
                     </p>
                   </div>
                 </div>
@@ -82,7 +83,7 @@ export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overa
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-1">
               <Coins className="w-4 h-4 text-treasure-gold" />
-              <span className="text-sm font-medium">{credits}</span>
+              <span className="text-sm font-medium">{credits.toFixed ? credits.toFixed(3) : credits} ETH</span>
             </div>
             
             <div className="flex items-center gap-1">
@@ -90,7 +91,7 @@ export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overa
               <span className="text-sm font-medium">{rounds}</span>
             </div>
 
-            {/* Leaderboard Button */}
+            {/* Statistics Button */}
             {(sessionStats || overallStats) && (
               <Button
                 variant="ghost"
@@ -98,7 +99,7 @@ export const GameHeader = ({ credits, rounds, timeRemaining, sessionStats, overa
                 onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
                 className="text-xs"
               >
-                Leaderboard
+                Statistics
                 <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isLeaderboardOpen ? 'rotate-180' : ''}`} />
               </Button>
             )}
