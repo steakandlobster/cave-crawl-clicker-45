@@ -99,7 +99,7 @@ const Index = () => {
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4 z-50 pointer-events-auto">
+          <div className="fixed top-4 right-4" style={{ zIndex: 9999 }}>
             <GlobalLeaderboard />
           </div>
           

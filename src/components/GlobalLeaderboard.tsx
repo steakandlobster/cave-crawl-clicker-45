@@ -132,15 +132,19 @@ export const GlobalLeaderboard = () => {
       <Button
         variant="treasure"
         size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 z-50 relative pointer-events-auto"
+        onClick={() => {
+          console.log("Leaderboard button clicked, current isOpen:", isOpen);
+          setIsOpen(!isOpen);
+        }}
+        className="flex items-center gap-2 relative bg-gradient-treasure text-primary-foreground hover:scale-105 shadow-treasure font-bold border-2 border-treasure-gold"
+        style={{ zIndex: 9999 }}
       >
         <Trophy className="w-4 h-4" />
         Leaderboard
       </Button>
 
       {isOpen && (
-        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-background/95 backdrop-blur-sm border-border/50 z-50 pointer-events-auto">
+        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-card border-border z-[9999] shadow-2xl" style={{ zIndex: 9999 }}>
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Trophy className="w-5 h-5 text-treasure-gold" />
