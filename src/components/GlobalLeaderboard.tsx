@@ -133,14 +133,14 @@ export const GlobalLeaderboard = () => {
         variant="treasure"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 z-50 relative"
+        className="flex items-center gap-2 z-50 relative pointer-events-auto"
       >
         <Trophy className="w-4 h-4" />
         Leaderboard
       </Button>
 
       {isOpen && (
-        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-background/95 backdrop-blur-sm border-border/50 z-50">
+        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-background/95 backdrop-blur-sm border-border/50 z-50 pointer-events-auto">
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Trophy className="w-5 h-5 text-treasure-gold" />

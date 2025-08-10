@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Crown, Trophy, Coins, RotateCcw } from "lucide-react";
 import caveOpening from "@/assets/cave-opening.jpg";
 import { useNavigate, useLocation } from "react-router-dom";
+import { SocialSharing } from "@/components/SocialSharing";
 
 interface VictoryState {
   success: boolean;
@@ -59,21 +60,27 @@ export default function Victory() {
               <Coins className="w-5 h-5 text-treasure-gold" />
               <span className="font-semibold">Total Treasure</span>
             </div>
-            <p className="text-2xl font-bold text-treasure-gold">{state.totalScore} Gold</p>
+            <p className="text-2xl font-bold text-treasure-gold">{(state.totalScore / 1000).toFixed(3)} ETH</p>
           </div>
 
           <div className={`p-4 rounded-lg border ${isProfit ? 'bg-green-500/20 border-green-500/30' : 'bg-yellow-500/20 border-yellow-500/30'}`}>
             <p className="text-sm text-muted-foreground mb-1">Net Result</p>
             <p className={`text-xl font-bold ${isProfit ? 'text-green-400' : 'text-yellow-400'}`}>
-              {isProfit ? '+' : ''}{netGain} Gold
+              {isProfit ? '+' : ''}{(netGain / 1000).toFixed(3)} ETH
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              (Started with {state.initialCredits} credits)
+              (Started with {(state.initialCredits / 1000).toFixed(3)} ETH)
             </p>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 mb-4">
+          <SocialSharing 
+            totalScore={state.totalScore}
+            roundsCompleted={state.roundsCompleted}
+            isVictory={true}
+          />
+          
           <Button
             variant="treasure"
             size="lg"

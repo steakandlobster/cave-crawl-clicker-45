@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { GameHeader } from "@/components/GameHeader";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
+import { useAchievements } from "@/hooks/useAchievements";
+import { AchievementNotification } from "@/components/AchievementNotification";
 import { Pickaxe, Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -16,9 +18,16 @@ const Index = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [showStats, setShowStats] = useState(false);
+  const [newAchievements, setNewAchievements] = useState<any[]>([]);
   
   const { sessionStats, resetSession } = useSessionStats();
   const { overallStats } = useOverallStats();
+  const { achievements, updateDailyStreak } = useAchievements();
+
+  // Update daily streak when visiting the home page
+  useEffect(() => {
+    updateDailyStreak();
+  }, [updateDailyStreak]);
 
   const presetAmounts = [0.001, 0.01, 0.1];
 
@@ -75,6 +84,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen cave-background">
+      <AchievementNotification 
+        achievements={newAchievements}
+        onDismiss={() => setNewAchievements([])}
+      />
+      
       <div className="relative z-10">
         <GameHeader
           credits={0}
@@ -85,7 +99,7 @@ const Index = () => {
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4 z-50">
+          <div className="fixed top-4 right-4 z-50 pointer-events-auto">
             <GlobalLeaderboard />
           </div>
           

@@ -68,7 +68,7 @@ export default function GameOver() {
 
           <div className="bg-secondary/50 p-4 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground mb-1">Final Score</p>
-            <p className="text-xl font-bold text-treasure-gold">0 Gold</p>
+            <p className="text-xl font-bold text-treasure-gold">0.000 ETH</p>
           </div>
         </div>
 

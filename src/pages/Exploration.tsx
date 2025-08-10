@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 import { GameHeader } from "@/components/GameHeader";
 import { CaveProgressionFlash } from "@/components/CaveProgressionFlash";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
+import { AchievementNotification } from "@/components/AchievementNotification";
 import { ArrowLeft, Skull, Crown, Shield } from "lucide-react";
 import { toast, useToast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
+import { useAchievements } from "@/hooks/useAchievements";
 import { getCaveImage } from "@/lib/cave-images";
 
 interface ExplorationState {
@@ -33,6 +35,8 @@ export default function Exploration() {
   
   const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
   const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed } = useOverallStats();
+  const { achievements, addRoundsCleared, addGamesPlayed, addPathChoice, getNewlyUnlockedAchievements } = useAchievements();
+  const [newAchievements, setNewAchievements] = useState<any[]>([]);
   const { dismiss } = useToast();
 
   // Memoize cave images to prevent them from changing during processing
@@ -66,7 +70,17 @@ export default function Exploration() {
     
     // Track game start on first round only
     if (state.round === 1) {
+      const previousAchievements = [...achievements];
       stableIncrementGamesPlayed();
+      addGamesPlayed(1);
+      
+      // Check for new achievements
+      setTimeout(() => {
+        const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
+        if (newlyUnlocked.length > 0) {
+          setNewAchievements(newlyUnlocked);
+        }
+      }, 100);
     }
   }, [state?.round, navigate]); // Remove incrementGamesPlayed from dependencies
 
@@ -102,11 +116,27 @@ export default function Exploration() {
         // Update stats for failed game
         const creditsSpent = state.credits;
         const netCredits = (state.score || 0) - creditsSpent; // Current winnings - initial bet
+        const previousAchievements = [...achievements];
         
         addSessionRounds(1);
         addSessionCredits(netCredits);
         addRoundsPlayed(1);
         addNetCredits(netCredits);
+        addRoundsCleared(1);
+        
+        // Get risk level for path choice tracking
+        const riskLevels = ['low', 'medium', 'high'];
+        const riskLevel = riskLevels[selectedOption % 3];
+        const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
+        addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
+        
+        // Check for new achievements
+        setTimeout(() => {
+          const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
+          if (newlyUnlocked.length > 0) {
+            setNewAchievements(newlyUnlocked);
+          }
+        }, 100);
         
         // Bad choice - navigate to game over immediately
         navigate("/game-over", {
@@ -151,12 +181,28 @@ export default function Exploration() {
         // Calculate net credits for completed game
         const creditsSpent = state.credits; // Initial bet
         const netCredits = newScore - creditsSpent;
+        const previousAchievements = [...achievements];
         
         // Update stats for completed game
         addSessionRounds(state.maxRounds);
         addSessionCredits(netCredits);
         addRoundsPlayed(state.maxRounds);
         addNetCredits(netCredits);
+        addRoundsCleared(1);
+        
+        // Get risk level for path choice tracking
+        const riskLevels = ['low', 'medium', 'high'];
+        const riskLevel = riskLevels[selectedOption! % 3];
+        const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
+        addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
+        
+        // Check for new achievements
+        setTimeout(() => {
+          const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
+          if (newlyUnlocked.length > 0) {
+            setNewAchievements(newlyUnlocked);
+          }
+        }, 100);
         
           // Successfully completed all rounds - navigate immediately
           navigate("/victory", {
@@ -206,6 +252,11 @@ export default function Exploration() {
 
   return (
     <div className="min-h-screen cave-background">
+      <AchievementNotification 
+        achievements={newAchievements}
+        onDismiss={() => setNewAchievements([])}
+      />
+      
       <div className="relative z-10">
         <GameHeader
           credits={state.credits}
@@ -216,7 +267,7 @@ export default function Exploration() {
         
         <div className="container mx-auto px-4 py-8 relative z-10">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4 z-50">
+          <div className="fixed top-4 right-4 z-50 pointer-events-auto">
             <GlobalLeaderboard />
           </div>
           
