@@ -267,8 +267,10 @@ export default function Exploration() {
         
         <div className="container mx-auto px-4 py-8 relative z-10">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4" style={{ zIndex: 9999 }}>
-            <GlobalLeaderboard />
+          <div className="fixed top-4 right-4" style={{ zIndex: 10000, pointerEvents: 'none' }}>
+            <div style={{ pointerEvents: 'auto' }}>
+              <GlobalLeaderboard />
+            </div>
           </div>
           
           <div className="max-w-4xl mx-auto">
@@ -285,7 +287,7 @@ export default function Exploration() {
               </Button>
               
               <h1 className="text-4xl font-bold mb-4 text-treasure-gold">
-                Round {state.round} of {state.maxRounds}
+                Navigated {state.round} of {state.maxRounds} passages
               </h1>
               <p className="text-lg text-muted-foreground mb-2">
                 Choose your path carefully! One wrong choice could end your exploration.
@@ -385,7 +387,7 @@ export default function Exploration() {
             <Card className="p-4 bg-secondary/30 border-border/50 backdrop-blur-sm mb-6">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-sm text-muted-foreground">Round</p>
+                  <p className="text-sm text-muted-foreground">Passages</p>
                   <p className="text-lg font-bold">{state.round} / {state.maxRounds}</p>
                 </div>
                 <div>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GameHeader } from "@/components/GameHeader";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
+import { AchievementsSection } from "@/components/AchievementsSection";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
 import { AchievementNotification } from "@/components/AchievementNotification";
@@ -99,8 +100,10 @@ const Index = () => {
         
         <div className="container mx-auto px-4 py-16 relative z-10">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4" style={{ zIndex: 9999 }}>
-            <GlobalLeaderboard />
+          <div className="fixed top-4 right-4" style={{ zIndex: 10000, pointerEvents: 'none' }}>
+            <div style={{ pointerEvents: 'auto' }}>
+              <GlobalLeaderboard />
+            </div>
           </div>
           
           <div className="max-w-4xl mx-auto">
@@ -113,7 +116,7 @@ const Index = () => {
                 Venture into mysterious caves to discover hidden ETH treasures!
               </p>
               <p className="text-sm text-muted-foreground">
-                Each game lasts up to 6 rounds. Win ETH by choosing safe paths!
+                You must safely navigate 6 passages to successfully escape the cave. Win ETH treasures by escaping.
               </p>
             </div>
 
@@ -183,6 +186,11 @@ const Index = () => {
                   </div>
                 </div>
               </Card>
+            </div>
+
+            {/* Achievements Section */}
+            <div className="mt-8">
+              <AchievementsSection />
             </div>
 
           </div>

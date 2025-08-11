@@ -128,23 +128,33 @@ export const GlobalLeaderboard = () => {
   const userPosition = currentLeaderboard.findIndex(entry => entry.id === getUserId()) + 1;
 
   return (
-    <>
+    <div className="relative" style={{ zIndex: 10000 }}>
       <Button
         variant="treasure"
         size="sm"
-        onClick={() => {
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
           console.log("Leaderboard button clicked, current isOpen:", isOpen);
           setIsOpen(!isOpen);
         }}
-        className="flex items-center gap-2 relative bg-gradient-treasure text-primary-foreground hover:scale-105 shadow-treasure font-bold border-2 border-treasure-gold"
-        style={{ zIndex: 9999 }}
+        className="flex items-center gap-2 bg-gradient-treasure text-primary-foreground hover:scale-105 shadow-treasure font-bold border-2 border-treasure-gold cursor-pointer"
+        style={{ 
+          zIndex: 10000,
+          pointerEvents: 'auto',
+          position: 'relative'
+        }}
       >
         <Trophy className="w-4 h-4" />
         Leaderboard
       </Button>
 
       {isOpen && (
-        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-card border-border z-[9999] shadow-2xl" style={{ zIndex: 9999 }}>
+        <Card className="absolute top-12 right-0 w-80 max-h-96 overflow-hidden bg-card/95 backdrop-blur-sm border-border shadow-2xl" 
+              style={{ 
+                zIndex: 10000,
+                pointerEvents: 'auto'
+              }}>
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Trophy className="w-5 h-5 text-treasure-gold" />
@@ -258,6 +268,6 @@ export const GlobalLeaderboard = () => {
           </div>
         </Card>
       )}
-    </>
+    </div>
   );
 };
