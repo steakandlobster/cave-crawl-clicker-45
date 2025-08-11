@@ -1,82 +1,66 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { X, Users, Copy, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Share2, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface SocialSharingProps {
   totalScore: number;
   roundsCompleted: number;
   isVictory: boolean;
+  referralMode?: boolean;
 }
 
-export const SocialSharing = ({ totalScore, roundsCompleted, isVictory }: SocialSharingProps) => {
-  const [copiedReferral, setCopiedReferral] = useState(false);
+export const SocialSharing = ({ totalScore, roundsCompleted, isVictory, referralMode = false }: SocialSharingProps) => {
+  const shareText = referralMode 
+    ? `🏴‍☠️ Join me in Cave Explorer - the ultimate ETH treasure hunting game! Navigate dangerous cave passages and escape with cryptocurrency treasures! ⚡🪙`
+    : isVictory 
+      ? `🏆 I just escaped the Cave Explorer game with ${totalScore.toFixed(3)} ETH treasure after surviving ${roundsCompleted} rounds! Think you can do better? 🪙⚡`
+      : `💀 I made it through ${roundsCompleted} rounds in Cave Explorer but didn't escape! The caves got me in the end. Can you survive longer? 🏴‍☠️⛏️`;
 
-  const formatScore = (score: number) => (score / 1000).toFixed(3);
+  const gameUrl = window.location.origin;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(gameUrl)}`;
 
-  const getShareText = () => {
-    const scoreText = `${formatScore(totalScore)} ETH`;
-    const statusText = isVictory ? "escaped" : "didn't make it";
-    
-    return `I just ${statusText} from the Cave Explorer game with ${scoreText} after ${roundsCompleted} rounds! 🔥 Can you do better? Play at ${window.location.origin}`;
+  const handleTwitterShare = () => {
+    window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
 
-  const shareOnX = () => {
-    const text = encodeURIComponent(getShareText());
-    const url = `https://twitter.com/intent/tweet?text=${text}`;
-    window.open(url, '_blank', 'width=550,height=420');
-  };
-
-  const copyReferralLink = async () => {
-    const referralCode = localStorage.getItem('cave-explorer-user-id') || 'explorer';
-    const referralLink = `${window.location.origin}?ref=${referralCode}`;
-    
+  const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(referralLink);
-      setCopiedReferral(true);
+      await navigator.clipboard.writeText(gameUrl);
       toast({
-        title: "Referral link copied!",
-        description: "Share this link with friends to track your referrals",
+        title: "Link Copied!",
+        description: "Share link copied to clipboard",
       });
-      setTimeout(() => setCopiedReferral(false), 2000);
-    } catch (error) {
+    } catch (err) {
       toast({
-        title: "Failed to copy",
-        description: "Please copy the link manually",
+        title: "Copy Failed",
+        description: "Could not copy link to clipboard",
         variant: "destructive",
       });
     }
   };
 
   return (
-    <Card className="p-4 bg-secondary/20 border-border/50">
-      <h3 className="font-semibold mb-3 text-center">Share Your Results</h3>
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleTwitterShare}
+        className="flex-1"
+      >
+        <Share2 className="w-4 h-4 mr-2" />
+        {referralMode ? "Share on X" : "Share Result"}
+      </Button>
       
-      <div className="space-y-3">
-        <Button
-          onClick={shareOnX}
-          className="w-full flex items-center gap-2 bg-black hover:bg-gray-800 text-white"
-          size="sm"
-        >
-          <X className="w-4 h-4" />
-          Share on X
-        </Button>
-
-        <Button
-          onClick={copyReferralLink}
-          variant="outline"
-          className="w-full flex items-center gap-2"
-          size="sm"
-        >
-          {copiedReferral ? (
-            <CheckCircle className="w-4 h-4 text-green-500" />
-          ) : (
-            <Users className="w-4 h-4" />
-          )}
-          {copiedReferral ? "Copied!" : "Refer Friends"}
-        </Button>
-      </div>
-    </Card>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleCopyLink}
+        className="flex-1"
+      >
+        <Users className="w-4 h-4 mr-2" />
+        Refer Friends
+      </Button>
+    </div>
   );
 };

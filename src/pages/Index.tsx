@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GameHeader } from "@/components/GameHeader";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
-import { AchievementsSection } from "@/components/AchievementsSection";
+import { StatsSidebar } from "@/components/StatsSidebar";
+import { SocialSharing } from "@/components/SocialSharing";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
 import { AchievementNotification } from "@/components/AchievementNotification";
-import { Pickaxe, Coins, Map } from "lucide-react";
+import { Pickaxe, Coins, Map, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -90,20 +91,19 @@ const Index = () => {
         onDismiss={() => setNewAchievements([])}
       />
       
+      {/* Stats Sidebar */}
+      <StatsSidebar 
+        sessionStats={sessionStats}
+        overallStats={overallStats}
+      />
+      
       <div className="relative z-10">
-        <GameHeader
-          credits={0}
-          rounds={0}
-          sessionStats={sessionStats}
-          overallStats={overallStats}
-        />
+        <GameHeader />
         
-        <div className="container mx-auto px-4 py-16 relative z-10">
+        <div className="container mx-auto px-4 py-16 relative z-10 ml-64">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4" style={{ zIndex: 10000, pointerEvents: 'none' }}>
-            <div style={{ pointerEvents: 'auto' }}>
-              <GlobalLeaderboard />
-            </div>
+          <div className="fixed top-4 right-4 z-30">
+            <GlobalLeaderboard />
           </div>
           
           <div className="max-w-4xl mx-auto">
@@ -183,15 +183,20 @@ const Index = () => {
                       )}
                     </Button>
                     
+                    {/* Refer Friends Button */}
+                    <div className="mt-4">
+                      <SocialSharing 
+                        totalScore={0}
+                        roundsCompleted={0}
+                        isVictory={false}
+                        referralMode={true}
+                      />
+                    </div>
                   </div>
                 </div>
               </Card>
             </div>
 
-            {/* Achievements Section */}
-            <div className="mt-8">
-              <AchievementsSection />
-            </div>
 
           </div>
         </div>

@@ -169,12 +169,7 @@ export default function Game() {
 
   return (
     <div className="min-h-screen cave-background">
-      <GameHeader
-        credits={gameState.credits}
-        rounds={gameState.rounds}
-        sessionStats={sessionStats}
-        overallStats={overallStats}
-      />
+      <GameHeader />
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">

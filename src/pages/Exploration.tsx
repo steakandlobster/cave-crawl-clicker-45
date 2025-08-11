@@ -7,7 +7,8 @@ import { GameHeader } from "@/components/GameHeader";
 import { CaveProgressionFlash } from "@/components/CaveProgressionFlash";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { AchievementNotification } from "@/components/AchievementNotification";
-import { ArrowLeft, Skull, Crown, Shield } from "lucide-react";
+import { Skull, Crown, Shield } from "lucide-react";
+import { StatsSidebar } from "@/components/StatsSidebar";
 import { toast, useToast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
@@ -257,35 +258,24 @@ export default function Exploration() {
         onDismiss={() => setNewAchievements([])}
       />
       
+      {/* Stats Sidebar */}
+      <StatsSidebar 
+        sessionStats={sessionStats}
+        overallStats={overallStats}
+      />
+      
       <div className="relative z-10">
-        <GameHeader
-          credits={state.credits}
-          rounds={state.round}
-          sessionStats={sessionStats}
-          overallStats={overallStats}
-        />
+        <GameHeader />
         
-        <div className="container mx-auto px-4 py-8 relative z-10">
+        <div className="container mx-auto px-4 py-8 relative z-10 ml-64">
           {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4" style={{ zIndex: 10000, pointerEvents: 'none' }}>
-            <div style={{ pointerEvents: 'auto' }}>
-              <GlobalLeaderboard />
-            </div>
+          <div className="fixed top-4 right-4 z-30">
+            <GlobalLeaderboard />
           </div>
           
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
-              <Button
-                variant="cave"
-                size="sm"
-                onClick={handleReturnHome}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Return to Base Camp
-              </Button>
-              
               <h1 className="text-4xl font-bold mb-4 text-treasure-gold">
                 Navigated {state.round} of {state.maxRounds} passages
               </h1>
