@@ -21,21 +21,21 @@ export const StatsSidebar = ({ sessionStats, overallStats }: StatsSidebarProps) 
   if (!sessionStats && !overallStats) return null;
 
   return (
-    <div className={`fixed top-0 left-0 h-full bg-secondary/95 backdrop-blur-sm border-r border-border/50 transition-all duration-300 z-50 ${
-      isCollapsed ? 'w-12' : 'w-64'
+    <div className={`fixed top-4 left-4 bg-secondary/95 backdrop-blur-sm border border-border/50 rounded-lg transition-all duration-300 z-50 shadow-lg ${
+      isCollapsed ? 'w-12 h-12' : 'w-80 max-h-[calc(100vh-2rem)]'
     }`}>
       {/* Toggle Button */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-4 bg-secondary border border-border/50 h-8 w-8 p-0 rounded-full"
+        className="absolute -right-3 top-2 bg-secondary border border-border/50 h-6 w-6 p-0 rounded-full"
       >
         {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </Button>
 
       {!isCollapsed && (
-        <div className="p-4">
+        <div className="p-3 overflow-y-auto max-h-full">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-primary" />
             <h3 className="font-semibold">Statistics</h3>
@@ -92,8 +92,8 @@ export const StatsSidebar = ({ sessionStats, overallStats }: StatsSidebarProps) 
       )}
 
       {isCollapsed && (
-        <div className="flex flex-col items-center pt-4">
-          <BarChart3 className="w-6 h-6 text-primary" />
+        <div className="flex flex-col items-center justify-center h-full">
+          <BarChart3 className="w-5 h-5 text-primary" />
         </div>
       )}
     </div>

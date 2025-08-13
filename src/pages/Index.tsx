@@ -17,7 +17,7 @@ import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(0.001);
   const [customAmount, setCustomAmount] = useState("");
   const [showStats, setShowStats] = useState(false);
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
@@ -100,7 +100,7 @@ const Index = () => {
       <div className="relative z-10">
         <GameHeader />
         
-        <div className="container mx-auto px-4 py-16 relative z-10 ml-64">
+        <div className="container mx-auto px-4 py-16 relative z-10 ml-96">
           {/* Global Leaderboard */}
           <div className="fixed top-4 right-4 z-30">
             <GlobalLeaderboard />
@@ -182,22 +182,20 @@ const Index = () => {
                         <span className="ml-2">({getAmountForButton()} ETH)</span>
                       )}
                     </Button>
-                    
-                    {/* Refer Friends Button */}
-                    <div className="mt-4">
-                      <SocialSharing 
-                        totalScore={0}
-                        roundsCompleted={0}
-                        isVictory={false}
-                        referralMode={true}
-                      />
-                    </div>
                   </div>
                 </div>
               </Card>
             </div>
 
-
+            {/* Refer Friends Section */}
+            <div className="max-w-md mx-auto mt-8">
+              <SocialSharing 
+                totalScore={0}
+                roundsCompleted={0}
+                isVictory={false}
+                referralMode={true}
+              />
+            </div>
           </div>
         </div>
       </div>

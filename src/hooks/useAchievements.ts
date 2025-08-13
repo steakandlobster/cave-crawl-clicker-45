@@ -12,6 +12,7 @@ interface AchievementData {
   totalGamesPlayed: number;
   pathChoices: PathChoiceStats;
   lastActiveDate: string;
+  referrals?: number;
 }
 
 interface Achievement {
@@ -37,23 +38,39 @@ const ACHIEVEMENT_DEFINITIONS = [
     id: 'daily_streak_7',
     name: 'Veteran Explorer',
     description: 'Play for 7 consecutive days',
-    icon: '⭐',
+    icon: 'Star',
     checkFn: (data: AchievementData) => data.dailyActiveStreak >= 7,
     progressFn: (data: AchievementData) => ({ current: data.dailyActiveStreak, max: 7 }),
   },
   {
+    id: 'daily_streak_14',
+    name: 'Master Explorer',
+    description: 'Play for 14 consecutive days',
+    icon: 'Trophy',
+    checkFn: (data: AchievementData) => data.dailyActiveStreak >= 14,
+    progressFn: (data: AchievementData) => ({ current: data.dailyActiveStreak, max: 14 }),
+  },
+  {
+    id: 'daily_streak_30',
+    name: 'Legend Explorer',
+    description: 'Play for 30 consecutive days',
+    icon: 'Award',
+    checkFn: (data: AchievementData) => data.dailyActiveStreak >= 30,
+    progressFn: (data: AchievementData) => ({ current: data.dailyActiveStreak, max: 30 }),
+  },
+  {
     id: 'rounds_100',
     name: 'Century Club',
-    description: 'Clear 100 total rounds',
-    icon: '💯',
+    description: 'Clear 100 total passages',
+    icon: 'Target',
     checkFn: (data: AchievementData) => data.totalRoundsCleared >= 100,
     progressFn: (data: AchievementData) => ({ current: data.totalRoundsCleared, max: 100 }),
   },
   {
     id: 'rounds_500',
     name: 'Cave Master',
-    description: 'Clear 500 total rounds',
-    icon: '👑',
+    description: 'Clear 500 total passages',
+    icon: 'Shield',
     checkFn: (data: AchievementData) => data.totalRoundsCleared >= 500,
     progressFn: (data: AchievementData) => ({ current: data.totalRoundsCleared, max: 500 }),
   },
@@ -69,7 +86,7 @@ const ACHIEVEMENT_DEFINITIONS = [
     id: 'dangerous_10',
     name: 'Risk Taker',
     description: 'Choose the dangerous path 10 times',
-    icon: '⚡',
+    icon: 'Zap',
     checkFn: (data: AchievementData) => data.pathChoices.dangerous >= 10,
     progressFn: (data: AchievementData) => ({ current: data.pathChoices.dangerous, max: 10 }),
   },
@@ -77,9 +94,33 @@ const ACHIEVEMENT_DEFINITIONS = [
     id: 'dangerous_100',
     name: 'Daredevil',
     description: 'Choose the dangerous path 100 times',
-    icon: '💀',
+    icon: 'Zap',
     checkFn: (data: AchievementData) => data.pathChoices.dangerous >= 100,
     progressFn: (data: AchievementData) => ({ current: data.pathChoices.dangerous, max: 100 }),
+  },
+  {
+    id: 'referrals_1',
+    name: 'Recruiter',
+    description: 'Refer 1 friend to the game',
+    icon: 'Trophy',
+    checkFn: (data: AchievementData) => (data as any).referrals >= 1,
+    progressFn: (data: AchievementData) => ({ current: (data as any).referrals || 0, max: 1 }),
+  },
+  {
+    id: 'referrals_5',
+    name: 'Ambassador',
+    description: 'Refer 5 friends to the game',
+    icon: 'Award',
+    checkFn: (data: AchievementData) => (data as any).referrals >= 5,
+    progressFn: (data: AchievementData) => ({ current: (data as any).referrals || 0, max: 5 }),
+  },
+  {
+    id: 'referrals_10',
+    name: 'Legend Recruiter',
+    description: 'Refer 10 friends to the game',
+    icon: 'Star',
+    checkFn: (data: AchievementData) => (data as any).referrals >= 10,
+    progressFn: (data: AchievementData) => ({ current: (data as any).referrals || 0, max: 10 }),
   },
 ];
 
@@ -90,6 +131,7 @@ export const useAchievements = () => {
     totalGamesPlayed: 0,
     pathChoices: { safe: 0, risky: 0, dangerous: 0 },
     lastActiveDate: '',
+    referrals: 0,
   });
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -177,6 +219,13 @@ export const useAchievements = () => {
     }));
   };
 
+  const addReferral = () => {
+    setAchievementData(prev => ({
+      ...prev,
+      referrals: (prev.referrals || 0) + 1,
+    }));
+  };
+
   const getNewlyUnlockedAchievements = (previousAchievements: Achievement[]) => {
     return achievements.filter(achievement => 
       achievement.unlocked && 
@@ -191,6 +240,7 @@ export const useAchievements = () => {
     addRoundsCleared,
     addGamesPlayed,
     addPathChoice,
+    addReferral,
     getNewlyUnlockedAchievements,
   };
 };

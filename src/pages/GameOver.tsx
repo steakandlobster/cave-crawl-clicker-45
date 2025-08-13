@@ -43,7 +43,7 @@ export default function GameOver() {
       <div className="relative z-10">
         <GameHeader />
         
-        <div className="min-h-screen flex items-center justify-center p-4 ml-64">
+        <div className="min-h-screen flex items-center justify-center p-4 ml-96">
           {/* Global Leaderboard */}
           <div className="fixed top-4 right-4 z-30">
             <GlobalLeaderboard />
@@ -75,7 +75,7 @@ export default function GameOver() {
                   <Coins className="w-5 h-5 text-treasure-gold" />
                   <span className="font-semibold">Final Treasure</span>
                 </div>
-                <p className="text-2xl font-bold text-treasure-gold">{state.totalScore.toFixed(3)} ETH</p>
+                <p className="text-2xl font-bold text-treasure-gold">0.000 ETH</p>
               </div>
 
               <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">

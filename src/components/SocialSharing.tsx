@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Share2, Users } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ReferralCodeDialog } from "@/components/ReferralCodeDialog";
 
 interface SocialSharingProps {
   totalScore: number;
@@ -52,15 +53,7 @@ export const SocialSharing = ({ totalScore, roundsCompleted, isVictory, referral
         {referralMode ? "Share on X" : "Share Result"}
       </Button>
       
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleCopyLink}
-        className="flex-1"
-      >
-        <Users className="w-4 h-4 mr-2" />
-        Refer Friends
-      </Button>
+      {referralMode && <ReferralCodeDialog className="flex-1" />}
     </div>
   );
 };

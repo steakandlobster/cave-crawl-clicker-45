@@ -46,7 +46,7 @@ export default function Victory() {
       <div className="relative z-10">
         <GameHeader />
         
-        <div className="min-h-screen flex items-center justify-center p-4 ml-64">
+        <div className="min-h-screen flex items-center justify-center p-4 ml-96">
           {/* Global Leaderboard */}
           <div className="fixed top-4 right-4 z-30">
             <GlobalLeaderboard />
