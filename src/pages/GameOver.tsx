@@ -43,11 +43,7 @@ export default function GameOver() {
       <div className="relative z-10">
         <GameHeader />
         
-        <div className="min-h-screen flex items-center justify-center p-4 ml-96">
-          {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4 z-30">
-            <GlobalLeaderboard />
-          </div>
+        <div className="min-h-screen flex items-center justify-center p-4 pt-24 ml-96">
           
           {/* Cave collapse background */}
           <div 

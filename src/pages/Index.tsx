@@ -100,11 +100,7 @@ const Index = () => {
       <div className="relative z-10">
         <GameHeader />
         
-        <div className="container mx-auto px-4 py-16 relative z-10 ml-96">
-          {/* Global Leaderboard */}
-          <div className="fixed top-4 right-4 z-30">
-            <GlobalLeaderboard />
-          </div>
+        <div className="container mx-auto px-4 pt-24 pb-16 relative z-10 ml-96">
           
           <div className="max-w-4xl mx-auto">
             {/* Hero Section */}

@@ -267,7 +267,7 @@ export default function Exploration() {
       <div className="relative z-10">
         <GameHeader />
         
-        <div className="container mx-auto px-4 py-8 relative z-10 ml-96">
+        <div className="container mx-auto px-4 pt-24 pb-8 relative z-10 ml-96">
           {/* Global Leaderboard */}
           <div className="fixed top-4 right-4 z-30">
             <GlobalLeaderboard />
