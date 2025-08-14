@@ -60,7 +60,7 @@ export default function Victory() {
         <div className="mb-6">
           <Crown className="w-20 h-20 mx-auto mb-4 text-treasure-gold animate-glow-pulse" />
           <h1 className="text-4xl font-bold mb-2 text-treasure-gold">Escaped!</h1>
-          <p className="text-foreground font-medium">You have successfully escaped the cave system!</p>
+          <p className="text-foreground font-medium">You have successfully escaped the cave!</p>
         </div>
 
         <div className="space-y-4 mb-8">
