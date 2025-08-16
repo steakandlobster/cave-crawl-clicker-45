@@ -42,6 +42,8 @@ export default function Exploration() {
 
   // Memoize cave images to prevent them from changing during processing
   const stableCaveImages = useMemo(() => {
+    if (!state) return [];
+    
     const images: string[] = [];
     const usedInThisRound: string[] = [];
     
@@ -56,7 +58,7 @@ export default function Exploration() {
     }
     
     return images;
-  }, [state.round, state.numOptions]); // Only re-generate when round or numOptions changes
+  }, [state?.round, state?.numOptions]); // Only re-generate when round or numOptions changes
 
   // Stable reference to incrementGamesPlayed to prevent infinite re-renders
   const stableIncrementGamesPlayed = useCallback(() => {
@@ -87,10 +89,12 @@ export default function Exploration() {
 
   // Reset component state when navigation state changes (fixes stuck exploring bug)
   useEffect(() => {
+    if (!state) return;
+    
     setSelectedOption(null);
     setIsProcessing(false);
     setUseInsurance(false); // Reset insurance each round
-  }, [state.round, state.numOptions]);
+  }, [state?.round, state?.numOptions]);
 
   if (!state) return null;
 
