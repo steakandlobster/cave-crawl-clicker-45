@@ -109,10 +109,10 @@ const Index = () => {
                 Cave Explorer
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
-                Venture into mysterious caves to discover hidden ETH treasures!
+                Venture into mysterious caves to mine hidden ETH treasures!
               </p>
               <p className="text-sm text-muted-foreground">
-                You must safely navigate 6 passages to successfully escape the cave. Win ETH treasures by escaping.
+                You must safely mine 6 passages to successfully escape the cave. Keep your mined ETH by escaping.
               </p>
             </div>
 

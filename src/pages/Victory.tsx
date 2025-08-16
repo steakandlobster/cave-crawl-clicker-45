@@ -75,7 +75,7 @@ export default function Victory() {
             <div className="bg-secondary/50 p-4 rounded-lg border border-border">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Coins className="w-5 h-5 text-treasure-gold" />
-                <span className="font-semibold">Total Treasure</span>
+                <span className="font-semibold">Total ETH mined</span>
               </div>
               <p className="text-2xl font-bold text-treasure-gold">{state.totalScore.toFixed(3)} ETH</p>
             </div>

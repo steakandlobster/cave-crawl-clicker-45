@@ -177,7 +177,7 @@ export default function Game() {
             Cave Exploration
           </h1>
           <p className="text-lg text-muted-foreground">
-            Choose a cave to explore! Each exploration costs 10 credits.
+            Choose a cave to explore!
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             Rounds remaining: {gameState.maxRounds - gameState.rounds}
@@ -200,7 +200,7 @@ export default function Game() {
         {gameState.credits < 10 && !gameState.isGameOver && (
           <div className="text-center mt-8">
             <p className="text-red-400 font-semibold">
-              Not enough credits to continue exploring!
+              Not enough coins to continue exploring!
             </p>
           </div>
         )}
