@@ -47,7 +47,8 @@ export default function Exploration() {
     const images: string[] = [];
     const usedInThisRound: string[] = [];
     
-    for (let i = 0; i < state.numOptions; i++) {
+    // Always generate 3 options: safe, risky, dangerous
+    for (let i = 0; i < 3; i++) {
       const riskLevels = ['low', 'medium', 'high'];
       const riskLevel = riskLevels[i % 3] as 'low' | 'medium' | 'high';
       
@@ -58,7 +59,7 @@ export default function Exploration() {
     }
     
     return images;
-  }, [state?.round, state?.numOptions]); // Only re-generate when round or numOptions changes
+  }, [state?.round]); // Only re-generate when round changes
 
   // Stable reference to incrementGamesPlayed to prevent infinite re-renders
   const stableIncrementGamesPlayed = useCallback(() => {
@@ -168,7 +169,10 @@ export default function Exploration() {
       });
       setCurrentToastId(toastResult.id);
 
-      // Handle game completion or next round
+      // Show progression flash before continuing
+      setShowProgression(true);
+      
+      // Handle game completion or next round after progression flash
       const handleProgressionComplete = () => {
         setShowProgression(false);
         
@@ -219,9 +223,6 @@ export default function Exploration() {
           return;
         }
 
-        // Show progression flash for non-final rounds
-        setShowProgression(true);
-        
         // Continue to next round - navigate immediately without delay
         console.log("Continuing to next round");
         navigate("/exploration", {
@@ -237,11 +238,6 @@ export default function Exploration() {
       
       // Store the completion handler
       setProgressionCompleteHandler(() => handleProgressionComplete);
-      
-      // For final round completion, skip progression flash and go directly to victory
-      if (newRound > state.maxRounds) {
-        handleProgressionComplete();
-      }
 
     } catch (error) {
       console.error("Navigation error:", error);
@@ -313,7 +309,7 @@ export default function Exploration() {
 
             {/* Cave Options - Rectangular Layout */}
             <div className="space-y-4 mb-8">
-              {Array.from({ length: state.numOptions }, (_, index) => {
+              {Array.from({ length: 3 }, (_, index) => {
                 const riskLevels = ['low', 'medium', 'high'];
                 const riskLevel = riskLevels[index % 3] as 'low' | 'medium' | 'high';
                 
@@ -360,7 +356,7 @@ export default function Exploration() {
                           {selectedOption === index && isProcessing ? (
                             <div className="animate-glow-pulse">
                               <Crown className="w-8 h-8 mx-auto mb-2 text-treasure-gold" />
-                              <p className="text-lg font-bold">Exploring...</p>
+                              <p className="text-lg font-bold">Mining...</p>
                             </div>
                            ) : (
                             <>
@@ -406,7 +402,7 @@ export default function Exploration() {
               <div className="flex items-center gap-3 text-center justify-center">
                 <Skull className="w-5 h-5 text-red-400" />
                 <p className="text-red-400 font-medium text-sm">
-                  Warning: Some paths may contain deadly traps. Choose wisely!
+                  Warning: Mining some paths may cause a cave in. Choose wisely!
                 </p>
                 <Skull className="w-5 h-5 text-red-400" />
               </div>
