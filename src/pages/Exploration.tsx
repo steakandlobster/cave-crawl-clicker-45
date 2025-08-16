@@ -168,10 +168,7 @@ export default function Exploration() {
       });
       setCurrentToastId(toastResult.id);
 
-      // Show progression flash before continuing
-      setShowProgression(true);
-      
-      // Handle game completion or next round after progression flash
+      // Handle game completion or next round
       const handleProgressionComplete = () => {
         setShowProgression(false);
         
@@ -222,13 +219,15 @@ export default function Exploration() {
           return;
         }
 
+        // Show progression flash for non-final rounds
+        setShowProgression(true);
+        
         // Continue to next round - navigate immediately without delay
         console.log("Continuing to next round");
-        const nextNumOptions = Math.floor(Math.random() * 3) + 2; // 2-4 options
         navigate("/exploration", {
           state: {
             ...state,
-            numOptions: nextNumOptions,
+            numOptions: 3, // Always 3 options: safe, risky, dangerous
             round: newRound,
             score: newScore
           },
@@ -238,6 +237,11 @@ export default function Exploration() {
       
       // Store the completion handler
       setProgressionCompleteHandler(() => handleProgressionComplete);
+      
+      // For final round completion, skip progression flash and go directly to victory
+      if (newRound > state.maxRounds) {
+        handleProgressionComplete();
+      }
 
     } catch (error) {
       console.error("Navigation error:", error);
@@ -280,14 +284,16 @@ export default function Exploration() {
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-4 text-treasure-gold">
-                Navigated {state.round} of {state.maxRounds} passages
-              </h1>
+              {state.round > 1 && (
+                <h1 className="text-4xl font-bold mb-4 text-treasure-gold">
+                  Mined {state.round - 1} of {state.maxRounds} passages
+                </h1>
+              )}
               <p className="text-lg text-muted-foreground mb-2">
-                Choose your path carefully! One wrong choice could end your exploration.
+                Choose your path carefully! One wrong choice could cause a cave in and end your expedition.
               </p>
               <p className="text-sm text-muted-foreground">
-                {state.numOptions} cave passages await your decision
+                3 mine paths await your decision
               </p>
             </div>
 
@@ -316,10 +322,10 @@ export default function Exploration() {
                 
                 const getRiskText = (risk: string) => {
                   switch (risk) {
-                    case 'low': return 'Safe Path';
-                    case 'medium': return 'Risky Path';
-                    case 'high': return 'Dangerous Path';
-                    default: return 'Unknown Path';
+                    case 'low': return 'Safe Mine Path';
+                    case 'medium': return 'Risky Mine Path';
+                    case 'high': return 'Dangerous Mine Path';
+                    default: return 'Unknown Mine Path';
                   }
                 };
                 const getRiskColor = (risk: string) => {
@@ -356,9 +362,9 @@ export default function Exploration() {
                               <Crown className="w-8 h-8 mx-auto mb-2 text-treasure-gold" />
                               <p className="text-lg font-bold">Exploring...</p>
                             </div>
-                          ) : (
+                           ) : (
                             <>
-                              <p className="text-xl font-bold mb-1">Path {index + 1}</p>
+                              <p className="text-xl font-bold mb-1">Mine Path {index + 1}</p>
                               <p className={`text-sm font-semibold ${getRiskColor(riskLevel)}`}>
                                 {getRiskText(riskLevel)}
                               </p>

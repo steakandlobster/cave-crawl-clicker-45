@@ -28,7 +28,7 @@ interface Achievement {
 const ACHIEVEMENT_DEFINITIONS = [
   {
     id: 'daily_streak_3',
-    name: 'Dedicated Explorer',
+    name: 'Dedicated Miner',
     description: 'Play for 3 consecutive days',
     icon: '🔥',
     checkFn: (data: AchievementData) => data.dailyActiveStreak >= 3,
@@ -36,7 +36,7 @@ const ACHIEVEMENT_DEFINITIONS = [
   },
   {
     id: 'daily_streak_7',
-    name: 'Veteran Explorer',
+    name: 'Veteran Miner',
     description: 'Play for 7 consecutive days',
     icon: 'Star',
     checkFn: (data: AchievementData) => data.dailyActiveStreak >= 7,
@@ -44,7 +44,7 @@ const ACHIEVEMENT_DEFINITIONS = [
   },
   {
     id: 'daily_streak_14',
-    name: 'Master Explorer',
+    name: 'Master Miner',
     description: 'Play for 14 consecutive days',
     icon: 'Trophy',
     checkFn: (data: AchievementData) => data.dailyActiveStreak >= 14,
@@ -52,7 +52,7 @@ const ACHIEVEMENT_DEFINITIONS = [
   },
   {
     id: 'daily_streak_30',
-    name: 'Legend Explorer',
+    name: 'Legend Miner',
     description: 'Play for 30 consecutive days',
     icon: 'Award',
     checkFn: (data: AchievementData) => data.dailyActiveStreak >= 30,
@@ -61,7 +61,7 @@ const ACHIEVEMENT_DEFINITIONS = [
   {
     id: 'rounds_100',
     name: 'Century Club',
-    description: 'Clear 100 total passages',
+    description: 'Mine 100 total passages',
     icon: 'Target',
     checkFn: (data: AchievementData) => data.totalRoundsCleared >= 100,
     progressFn: (data: AchievementData) => ({ current: data.totalRoundsCleared, max: 100 }),
@@ -69,14 +69,14 @@ const ACHIEVEMENT_DEFINITIONS = [
   {
     id: 'rounds_500',
     name: 'Cave Master',
-    description: 'Clear 500 total passages',
+    description: 'Mine 500 total passages',
     icon: 'Shield',
     checkFn: (data: AchievementData) => data.totalRoundsCleared >= 500,
     progressFn: (data: AchievementData) => ({ current: data.totalRoundsCleared, max: 500 }),
   },
   {
     id: 'games_50',
-    name: 'Persistent Explorer',
+    name: 'Persistent Miner',
     description: 'Play 50 total games',
     icon: '🎯',
     checkFn: (data: AchievementData) => data.totalGamesPlayed >= 50,

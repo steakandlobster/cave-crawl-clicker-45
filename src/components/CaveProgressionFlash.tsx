@@ -37,7 +37,7 @@ export const CaveProgressionFlash = ({ onComplete }: CaveProgressionFlashProps) 
             <h2 className="text-4xl font-bold mb-2 text-treasure-gold animate-glow-pulse">
               Safe Passage!
             </h2>
-            <p className="text-xl">You venture deeper into the cave...</p>
+            <p className="text-xl">You are closer to escaping the cave...</p>
           </div>
         </div>
       </div>
