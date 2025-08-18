@@ -164,7 +164,7 @@ export default function Exploration() {
 
       const toastResult = toast({
         title: "Safe Passage!",
-        description: `You found ${treasureFound.toFixed(3)} ETH and advanced safely!`,
+        description: `You mined ${treasureFound.toFixed(3)} ETH and advanced safely!`,
         duration: 2000, // 2 seconds
       });
       setCurrentToastId(toastResult.id);
