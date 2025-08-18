@@ -7,7 +7,7 @@ import { GameHeader } from "@/components/GameHeader";
 import { CaveProgressionFlash } from "@/components/CaveProgressionFlash";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { AchievementNotification } from "@/components/AchievementNotification";
-import { Skull, Crown, Shield } from "lucide-react";
+import { Skull, Crown } from "lucide-react";
 import { StatsSidebar } from "@/components/StatsSidebar";
 import { toast, useToast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
@@ -29,7 +29,7 @@ export default function Exploration() {
   
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [useInsurance, setUseInsurance] = useState(false);
+  
   const [showProgression, setShowProgression] = useState(false);
   const [progressionCompleteHandler, setProgressionCompleteHandler] = useState<() => void>(() => () => {});
   const [currentToastId, setCurrentToastId] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export default function Exploration() {
     
     setSelectedOption(null);
     setIsProcessing(false);
-    setUseInsurance(false); // Reset insurance each round
+    
   }, [state?.round, state?.numOptions]);
 
   if (!state) return null;
@@ -150,7 +150,7 @@ export default function Exploration() {
             success: false,
             round: state.round,
             totalScore: state.score || 0,
-            reason: useInsurance ? "Insurance protected you, but no treasure found!" : "You encountered a dangerous trap!"
+            reason: "You encountered a dangerous trap!"
           },
           replace: true
         });
@@ -293,19 +293,6 @@ export default function Exploration() {
               </p>
             </div>
 
-            {/* Insurance Option */}
-            <div className="flex justify-center mb-6">
-              <Button
-                variant={useInsurance ? "treasure" : "cave"}
-                size="lg"
-                onClick={() => setUseInsurance(!useInsurance)}
-                className="flex items-center gap-2"
-                disabled={isProcessing}
-              >
-                <Shield className="w-5 h-5" />
-                {useInsurance ? "Insurance Active (This Round)" : "Purchase Insurance (This Round Only)"}
-              </Button>
-            </div>
 
             {/* Cave Options - Rectangular Layout */}
             <div className="space-y-4 mb-8">

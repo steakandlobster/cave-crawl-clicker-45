@@ -61,11 +61,6 @@ export default function GameOver() {
             </div>
 
             <div className="space-y-4 mb-8">
-              <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/20">
-                <p className="text-sm text-muted-foreground mb-1">What happened?</p>
-                <p className="font-medium">{state.reason}</p>
-              </div>
-
               <div className="bg-secondary/50 p-4 rounded-lg border border-border">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Coins className="w-5 h-5 text-treasure-gold" />
@@ -75,7 +70,7 @@ export default function GameOver() {
               </div>
 
               <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-                <p className="text-sm text-muted-foreground mb-1">Passages Explored</p>
+                <p className="text-sm text-muted-foreground mb-1">Passages Mined</p>
                 <p className="text-xl font-bold text-blue-400">{state.round} passages</p>
               </div>
             </div>
