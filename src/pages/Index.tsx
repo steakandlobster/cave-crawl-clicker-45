@@ -22,19 +22,64 @@ const Index = () => {
   const [customAmount, setCustomAmount] = useState("");
   const [showStats, setShowStats] = useState(false);
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   const { sessionStats, resetSession } = useSessionStats();
   const { overallStats } = useOverallStats();
   const { achievements, updateDailyStreak } = useAchievements();
 
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Auth check error:", error);
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(!!session?.access_token);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.access_token);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Update daily streak when visiting the home page
   useEffect(() => {
-    updateDailyStreak();
-  }, [updateDailyStreak]);
+    if (isAuthenticated) {
+      updateDailyStreak();
+    }
+  }, [updateDailyStreak, isAuthenticated]);
 
   const presetAmounts = [0.001, 0.01, 0.1];
 
   const handleStartGame = async () => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to start a provably fair game.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     const credits = selectedAmount || parseFloat(customAmount);
     
     if (!credits || credits < 0.001) {
@@ -206,19 +251,31 @@ const Index = () => {
                   </div>
 
                   <div className="pt-4 border-t border-border">
-                    <Button
-                      variant="treasure"
-                      size="xl"
-                      onClick={handleStartGame}
-                      disabled={!getAmountForButton()}
-                      className="w-full"
-                    >
-                      <Map className="w-5 h-5 mr-2" />
-                      Start Cave Exploration
-                      {getAmountForButton() > 0 && (
-                        <span className="ml-2">({getAmountForButton()} ETH)</span>
-                      )}
-                    </Button>
+                    {!isAuthenticated ? (
+                      <Button
+                        variant="cave"
+                        size="xl"
+                        onClick={() => navigate("/auth")}
+                        className="w-full"
+                      >
+                        <Map className="w-5 h-5 mr-2" />
+                        Sign In to Start Exploring
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="treasure"
+                        size="xl"
+                        onClick={handleStartGame}
+                        disabled={!getAmountForButton() || isLoading}
+                        className="w-full"
+                      >
+                        <Map className="w-5 h-5 mr-2" />
+                        Start Cave Exploration
+                        {getAmountForButton() > 0 && (
+                          <span className="ml-2">({getAmountForButton()} ETH)</span>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
