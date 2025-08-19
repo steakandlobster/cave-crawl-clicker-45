@@ -14,6 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_progress: {
+        Row: {
+          achievement_key: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          progress: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_key: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          progress?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_key?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          progress?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievement_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_rounds: {
+        Row: {
+          cave_selected: number
+          created_at: string
+          credits_won: number
+          game_session_id: string
+          id: string
+          round_number: number
+          treasure_found: string
+        }
+        Insert: {
+          cave_selected: number
+          created_at?: string
+          credits_won: number
+          game_session_id: string
+          id?: string
+          round_number: number
+          treasure_found: string
+        }
+        Update: {
+          cave_selected?: number
+          created_at?: string
+          credits_won?: number
+          game_session_id?: string
+          id?: string
+          round_number?: number
+          treasure_found?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_rounds_game_session_id_fkey"
+            columns: ["game_session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_sessions: {
+        Row: {
+          amount_wagered: number
+          completed_at: string | null
+          created_at: string
+          final_result: string | null
+          game_hash: string
+          id: string
+          net_result: number | null
+          passages_navigated: number | null
+          pre_generated_results: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_wagered: number
+          completed_at?: string | null
+          created_at?: string
+          final_result?: string | null
+          game_hash: string
+          id?: string
+          net_result?: number | null
+          passages_navigated?: number | null
+          pre_generated_results: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_wagered?: number
+          completed_at?: string | null
+          created_at?: string
+          final_result?: string | null
+          game_hash?: string
+          id?: string
+          net_result?: number | null
+          passages_navigated?: number | null
+          pre_generated_results?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_leaderboard: {
         Row: {
           created_at: string
@@ -49,6 +181,41 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          last_login_at: string
+          referred_by: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          last_login_at?: string
+          referred_by?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_login_at?: string
+          referred_by?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
