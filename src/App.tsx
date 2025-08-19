@@ -9,6 +9,7 @@ import Exploration from "./pages/Exploration";
 import GameOver from "./pages/GameOver";
 import Victory from "./pages/Victory";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/game" element={<Game />} />
           <Route path="/exploration" element={<Exploration />} />
           <Route path="/game-over" element={<GameOver />} />

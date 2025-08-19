@@ -14,6 +14,7 @@ import { useAchievements } from "@/hooks/useAchievements";
 import { AchievementNotification } from "@/components/AchievementNotification";
 import { Pickaxe, Coins, Map, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -55,21 +56,36 @@ const Index = () => {
     }
 
     // Don't reset session stats - they should persist across games
-    
-    // TODO: Replace with actual backend call
-    // For now, simulate backend response
     try {
-      // Simulated backend response
-      const numOptions = Math.floor(Math.random() * 3) + 2; // 2-4 options
-      
-      navigate("/exploration", { 
-        state: { 
-          credits, 
-          numOptions,
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to start a provably fair game.",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("start-game", {
+        body: {
+          amount_wagered: credits,
+          max_rounds: 6,
+          client_seed: String(Date.now()),
+        },
+      });
+
+      if (error) throw error;
+
+      navigate("/exploration", {
+        state: {
+          credits,
+          numOptions: 3,
           round: 1,
-          maxRounds: 6,
-          score: 0 // Start with 0 winnings
-        } 
+          maxRounds: data?.max_rounds ?? 6,
+          score: 0,
+          sessionId: data?.session_id,
+        },
       });
     } catch (error) {
       toast({

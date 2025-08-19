@@ -26,16 +26,14 @@ export const GlobalLeaderboard = () => {
   
   const { sessionStats } = useSessionStats();
   const { overallStats } = useOverallStats();
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Generate a consistent user ID for this session
-  const getUserId = () => {
-    let userId = localStorage.getItem('cave-explorer-user-id');
-    if (!userId) {
-      userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('cave-explorer-user-id', userId);
-    }
-    return userId;
-  };
+  useEffect(() => {
+    // Use authenticated user id for consistency with backend updates
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+  }, []);
 
   const updateUserStats = async () => {
     const userId = getUserId();

@@ -13,13 +13,15 @@ import { toast, useToast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
 import { getCaveImage } from "@/lib/cave-images";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExplorationState {
   credits: number;
   numOptions: number;
   round: number;
   maxRounds: number;
-  score?: number;
+  score: number;
+  sessionId: string;
 }
 
 export default function Exploration() {
@@ -107,138 +109,127 @@ export default function Exploration() {
 
     console.log("Starting exploration for option:", optionIndex);
 
-    // TODO: Replace with actual backend call
     try {
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const isSuccessful = Math.random() > 0.3; // 70% success chance
-      const treasureFound = isSuccessful ? (Math.random() * 0.05 + 0.025) : 0; // 0.025-0.075 ETH
-      
+      // Call backend to evaluate this round
+      const { data, error } = await supabase.functions.invoke("play-round", {
+        body: {
+          session_id: state.sessionId,
+          round_number: state.round,
+          option_index: optionIndex,
+        },
+      });
+
+      if (error) throw error;
+
+      const isSuccessful = !!data?.isSuccessful;
+      const treasureFound = Number(data?.treasureFound || 0);
+      const totalScore = Number(data?.totalScore || state.score || 0);
+      const nextRound = Number(data?.nextRound || state.round + 1);
+      const gameCompleted = !!data?.gameCompleted;
+
       console.log("Exploration result:", { isSuccessful, treasureFound });
-      
+
       if (!isSuccessful) {
         console.log("Navigating to game over");
-        // Update stats for failed game
         const creditsSpent = state.credits;
-        const netCredits = (state.score || 0) - creditsSpent; // Current winnings - initial bet
+        const netCredits = totalScore - creditsSpent;
         const previousAchievements = [...achievements];
-        
+
         addSessionRounds(1);
         addSessionCredits(netCredits);
         addRoundsPlayed(1);
         addNetCredits(netCredits);
         addRoundsCleared(1);
-        
-        // Get risk level for path choice tracking
+
         const riskLevels = ['low', 'medium', 'high'];
-        const riskLevel = riskLevels[selectedOption % 3];
+        const riskLevel = riskLevels[optionIndex % 3];
         const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
         addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
-        
-        // Check for new achievements
+
         setTimeout(() => {
           const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
           if (newlyUnlocked.length > 0) {
             setNewAchievements(newlyUnlocked);
           }
         }, 100);
-        
-        // Bad choice - navigate to game over immediately
+
         navigate("/game-over", {
           state: {
             success: false,
             round: state.round,
-            totalScore: state.score || 0,
-            reason: "You encountered a dangerous trap!"
+            totalScore: totalScore,
+            reason: "You encountered a dangerous trap!",
           },
-          replace: true
+          replace: true,
         });
         return;
       }
 
-      const newScore = (state.score || 0) + treasureFound;
-      const newRound = state.round + 1;
-
-      console.log("Success! New score:", newScore, "New round:", newRound);
-
       const toastResult = toast({
         title: "Safe Passage!",
         description: `You mined ${treasureFound.toFixed(3)} ETH and advanced safely!`,
-        duration: 2000, // 2 seconds
+        duration: 2000,
       });
       setCurrentToastId(toastResult.id);
 
-      // Show progression flash before continuing
       setShowProgression(true);
-      
-      // Handle game completion or next round after progression flash
+
       const handleProgressionComplete = () => {
         setShowProgression(false);
-        
-        // Clear the toast when progression completes
         if (currentToastId) {
           dismiss(currentToastId);
           setCurrentToastId(null);
         }
-        
-        if (newRound > state.maxRounds) {
-        console.log("Game completed! Navigating to victory");
-        // Calculate net credits for completed game
-        const creditsSpent = state.credits; // Initial bet
-        const netCredits = newScore - creditsSpent;
-        const previousAchievements = [...achievements];
-        
-        // Update stats for completed game
-        addSessionRounds(state.maxRounds);
-        addSessionCredits(netCredits);
-        addRoundsPlayed(state.maxRounds);
-        addNetCredits(netCredits);
-        addRoundsCleared(1);
-        
-        // Get risk level for path choice tracking
-        const riskLevels = ['low', 'medium', 'high'];
-        const riskLevel = riskLevels[selectedOption! % 3];
-        const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
-        addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
-        
-        // Check for new achievements
-        setTimeout(() => {
-          const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
-          if (newlyUnlocked.length > 0) {
-            setNewAchievements(newlyUnlocked);
-          }
-        }, 100);
-        
-          // Successfully completed all rounds - navigate immediately
+
+        if (gameCompleted || nextRound > state.maxRounds) {
+          console.log("Game completed! Navigating to victory");
+          const creditsSpent = state.credits;
+          const netCredits = totalScore - creditsSpent;
+          const previousAchievements = [...achievements];
+
+          addSessionRounds(state.maxRounds);
+          addSessionCredits(netCredits);
+          addRoundsPlayed(state.maxRounds);
+          addNetCredits(netCredits);
+          addRoundsCleared(1);
+
+          const riskLevels = ['low', 'medium', 'high'];
+          const riskLevel = riskLevels[optionIndex % 3];
+          const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
+          addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
+
+          setTimeout(() => {
+            const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
+            if (newlyUnlocked.length > 0) {
+              setNewAchievements(newlyUnlocked);
+            }
+          }, 100);
+
           navigate("/victory", {
             state: {
               success: true,
-              totalScore: newScore,
+              totalScore: totalScore,
               roundsCompleted: state.maxRounds,
-              initialCredits: state.credits
+              initialCredits: state.credits,
             },
-            replace: true
+            replace: true,
           });
           return;
         }
 
-        // Continue to next round - navigate immediately without delay
         console.log("Continuing to next round");
         navigate("/exploration", {
           state: {
             ...state,
-            numOptions: 3, // Always 3 options: safe, risky, dangerous
-            round: newRound,
-            score: newScore
+            numOptions: 3,
+            round: nextRound,
+            score: totalScore,
           },
-          replace: true
+          replace: true,
         });
       };
-      
-      // Store the completion handler
-      setProgressionCompleteHandler(() => handleProgressionComplete);
 
+      setProgressionCompleteHandler(() => handleProgressionComplete);
     } catch (error) {
       console.error("Navigation error:", error);
       toast({
