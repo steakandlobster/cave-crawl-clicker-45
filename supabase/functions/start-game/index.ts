@@ -76,12 +76,33 @@ serve(async (req) => {
 
     const optionsByRound: Array<{ trapIndex: number; payouts: number[] }> = [];
     for (let r = 0; r < max_rounds; r++) {
-      const trapIndex = Math.floor(rand() * 3);
-      // payouts between 0.025 and 0.075 ETH
-      const payouts = [0, 1, 2].map(() => {
-        const v = 0.025 + rand() * 0.05;
-        return Math.round(v * 1e6) / 1e6; // 6 decimals
-      });
+      // Odds: Safe (8% death, 21% reward), Risky (17% death, 45% reward), Dangerous (25% death, 76% reward)
+      const deathChances = [0.08, 0.17, 0.25]; // Safe, Risky, Dangerous
+      const rewards = [0.21, 0.45, 0.76]; // Reward multipliers for each path
+      
+      // Determine which path is the trap based on death chances
+      const trapRoll = rand();
+      let trapIndex = -1;
+      let cumulativeChance = 0;
+      
+      for (let i = 0; i < 3; i++) {
+        cumulativeChance += deathChances[i] / 3; // Normalize across 3 paths
+        if (trapRoll < cumulativeChance) {
+          trapIndex = i;
+          break;
+        }
+      }
+      
+      // If no trap was selected (edge case), default to random
+      if (trapIndex === -1) {
+        trapIndex = Math.floor(rand() * 3);
+      }
+      
+      // Set payouts - survivors get their reward multiplier * amount_wagered, trap gets 0
+      const payouts = rewards.map((reward, index) => 
+        index === trapIndex ? 0 : Math.round(reward * amount_wagered * 1e6) / 1e6
+      );
+      
       optionsByRound.push({ trapIndex, payouts });
     }
 

@@ -40,19 +40,28 @@ export const GlobalLeaderboard = () => {
     const today = new Date().toISOString().split('T')[0];
     
     try {
+      // Get user profile for username
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .single();
+        
+      const username = profile?.username || `Explorer${userId.slice(-6)}`;
+      
       // Update or insert user stats
       const { error } = await supabase
         .from('global_leaderboard')
         .upsert({
           id: userId,
-          username: `Explorer ${userId.slice(-6)}`,
+          username,
           daily_rounds: sessionStats.sessionRounds,
           daily_net_credits: sessionStats.sessionCredits,
           total_rounds: overallStats.totalRoundsPlayed,
           total_net_credits: overallStats.totalNetCredits,
           date: today,
         }, {
-          onConflict: 'id'
+          onConflict: 'id,date'
         });
 
       if (error) throw error;
@@ -93,9 +102,10 @@ export const GlobalLeaderboard = () => {
         .from('global_leaderboard')
         .select('*')
         .eq('id', userId)
-        .single();
+        .eq('date', today)
+        .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') throw userError;
+      if (userError) throw userError;
 
       setDailyLeaderboard(dailyData || []);
       setOverallLeaderboard(overallData || []);
@@ -108,10 +118,10 @@ export const GlobalLeaderboard = () => {
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && userId) {
       fetchLeaderboards();
     }
-  }, [isOpen, sessionStats, overallStats]);
+  }, [isOpen, userId]);
 
   const formatCredits = (credits: number) => {
     return credits >= 0 ? `+${credits.toFixed(3)}` : `${credits.toFixed(3)}`;
