@@ -57,8 +57,20 @@ const Index = () => {
 
     // Don't reset session stats - they should persist across games
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
+      // Check authentication more thoroughly
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        toast({
+          title: "Authentication Error", 
+          description: "Please sign in again.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      if (!sessionData.session?.access_token) {
         toast({
           title: "Sign in required",
           description: "Please sign in to start a provably fair game.",
@@ -66,6 +78,8 @@ const Index = () => {
         navigate("/auth");
         return;
       }
+
+      console.log("Starting game with user:", sessionData.session.user.id);
 
       const { data, error } = await supabase.functions.invoke("start-game", {
         body: {
@@ -75,7 +89,17 @@ const Index = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
+
+      if (!data?.session_id) {
+        console.error("No session ID returned:", data);
+        throw new Error("Invalid response from game server");
+      }
+
+      console.log("Game started successfully:", data);
 
       navigate("/exploration", {
         state: {
@@ -88,9 +112,10 @@ const Index = () => {
         },
       });
     } catch (error) {
+      console.error("Game start error:", error);
       toast({
         title: "Connection Error",
-        description: "Could not connect to game server. Please try again.",
+        description: error instanceof Error ? error.message : "Could not connect to game server. Please try again.",
         variant: "destructive",
       });
     }
