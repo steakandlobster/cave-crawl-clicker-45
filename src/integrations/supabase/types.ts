@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      global_leaderboard: {
+        Row: {
+          created_at: string
+          daily_net_credits: number
+          daily_rounds: number
+          date: string
+          id: string
+          total_net_credits: number
+          total_rounds: number
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          daily_net_credits?: number
+          daily_rounds?: number
+          date?: string
+          id: string
+          total_net_credits?: number
+          total_rounds?: number
+          updated_at?: string
+          username?: string
+        }
+        Update: {
+          created_at?: string
+          daily_net_credits?: number
+          daily_rounds?: number
+          date?: string
+          id?: string
+          total_net_credits?: number
+          total_rounds?: number
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
