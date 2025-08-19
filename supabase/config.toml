@@ -1,1 +1,7 @@
 project_id = "aegayadckentahcljxhf"
+
+[functions.start-game]
+verify_jwt = true
+
+[functions.play-round]
+verify_jwt = true

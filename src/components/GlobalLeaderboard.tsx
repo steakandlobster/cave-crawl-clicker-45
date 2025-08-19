@@ -36,7 +36,7 @@ export const GlobalLeaderboard = () => {
   }, []);
 
   const updateUserStats = async () => {
-    const userId = getUserId();
+    if (!userId) return;
     const today = new Date().toISOString().split('T')[0];
     
     try {
@@ -64,7 +64,6 @@ export const GlobalLeaderboard = () => {
   const fetchLeaderboards = async () => {
     setLoading(true);
     const today = new Date().toISOString().split('T')[0];
-    const userId = getUserId();
     
     try {
       // Update user stats first
@@ -123,7 +122,7 @@ export const GlobalLeaderboard = () => {
   };
 
   const currentLeaderboard = activeTab === 'daily' ? dailyLeaderboard : overallLeaderboard;
-  const userPosition = currentLeaderboard.findIndex(entry => entry.id === getUserId()) + 1;
+  const userPosition = currentLeaderboard.findIndex(entry => entry.id === userId) + 1;
 
   return (
     <div className="relative" style={{ zIndex: 10000 }}>
@@ -189,7 +188,7 @@ export const GlobalLeaderboard = () => {
                   <div
                     key={entry.id}
                     className={`flex items-center justify-between p-2 rounded text-sm ${
-                      entry.id === getUserId() ? 'bg-primary/20 border border-primary/40' : 'bg-secondary/20'
+                      entry.id === userId ? 'bg-primary/20 border border-primary/40' : 'bg-secondary/20'
                     }`}
                   >
                     <div className="flex items-center gap-2">
