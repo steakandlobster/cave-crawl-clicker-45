@@ -78,7 +78,7 @@ serve(async (req) => {
     const optionsByRound: Array<{ outcomes: Array<{ isTrapped: boolean; payout: number }> }> = [];
     for (let r = 0; r < max_rounds; r++) {
       // Independent death chances and reward multipliers for each path
-      const deathChances = [0.08, 0.20, 0.40]; // Safe (8%), Medium (20%), High Risk (40%)
+      const deathChances = [0.08, 0.17, 0.25]; // Safe (8%), Medium (20%), High Risk (40%)
       const rewards = [0.21, 0.45, 0.76]; // Reward multipliers for each path
       
       const outcomes = [];
