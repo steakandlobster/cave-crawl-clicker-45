@@ -17,24 +17,44 @@ export const useSessionStats = () => {
     sessionRounds: 0,
     sessionCredits: 0,
   });
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Load session stats from localStorage on mount
+  // Generate or load session ID
   useEffect(() => {
-    const savedSessionStats = localStorage.getItem('cave-explorer-session-stats');
-    if (savedSessionStats) {
-      try {
-        const parsed = JSON.parse(savedSessionStats);
-        setSessionStats(parsed);
-      } catch (error) {
-        console.warn('Failed to parse saved session stats:', error);
+    let currentSessionId = localStorage.getItem('cave-explorer-session-id');
+    const sessionStartTime = localStorage.getItem('cave-explorer-session-start');
+    const now = Date.now();
+    
+    // Create new session if none exists or if more than 1 hour old
+    if (!currentSessionId || !sessionStartTime || now - parseInt(sessionStartTime) > 3600000) {
+      currentSessionId = crypto.randomUUID();
+      localStorage.setItem('cave-explorer-session-id', currentSessionId);
+      localStorage.setItem('cave-explorer-session-start', now.toString());
+      // Reset session stats for new session
+      setSessionStats({ sessionRounds: 0, sessionCredits: 0 });
+      localStorage.setItem('cave-explorer-session-stats', JSON.stringify({ sessionRounds: 0, sessionCredits: 0 }));
+    } else {
+      // Load existing session stats
+      const savedSessionStats = localStorage.getItem('cave-explorer-session-stats');
+      if (savedSessionStats) {
+        try {
+          const parsed = JSON.parse(savedSessionStats);
+          setSessionStats(parsed);
+        } catch (error) {
+          console.warn('Failed to parse saved session stats:', error);
+        }
       }
     }
+    
+    setSessionId(currentSessionId);
   }, []);
 
   // Save session stats to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('cave-explorer-session-stats', JSON.stringify(sessionStats));
-  }, [sessionStats]);
+    if (sessionId) {
+      localStorage.setItem('cave-explorer-session-stats', JSON.stringify(sessionStats));
+    }
+  }, [sessionStats, sessionId]);
 
   const addSessionRounds = (rounds: number) => {
     setSessionStats(prev => ({
@@ -51,10 +71,14 @@ export const useSessionStats = () => {
   };
 
   const resetSession = () => {
+    const newSessionId = crypto.randomUUID();
+    setSessionId(newSessionId);
     setSessionStats({
       sessionRounds: 0,
       sessionCredits: 0,
     });
+    localStorage.setItem('cave-explorer-session-id', newSessionId);
+    localStorage.setItem('cave-explorer-session-start', Date.now().toString());
     localStorage.setItem('cave-explorer-session-stats', JSON.stringify({
       sessionRounds: 0,
       sessionCredits: 0,
@@ -63,6 +87,7 @@ export const useSessionStats = () => {
 
   return {
     sessionStats,
+    sessionId,
     addSessionRounds,
     addSessionCredits,
     resetSession,
@@ -129,7 +154,15 @@ export const useOverallStats = () => {
     const checkAuthAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await fetchFromDatabase();
+        // Only fetch if we don't have recent data (less than 5 seconds old)
+        const now = Date.now();
+        const lastFetch = localStorage.getItem('cave-explorer-last-fetch');
+        if (!lastFetch || now - parseInt(lastFetch) > 5000) {
+          await fetchFromDatabase();
+          localStorage.setItem('cave-explorer-last-fetch', now.toString());
+        } else {
+          loadFromLocalStorage();
+        }
       } else {
         loadFromLocalStorage();
       }
@@ -141,6 +174,7 @@ export const useOverallStats = () => {
       if (session) {
         setTimeout(() => {
           fetchFromDatabase();
+          localStorage.setItem('cave-explorer-last-fetch', Date.now().toString());
         }, 0);
       } else {
         loadFromLocalStorage();

@@ -71,7 +71,7 @@ export default function GameOver() {
 
               <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
                 <p className="text-sm text-muted-foreground mb-1">Passages Mined</p>
-                <p className="text-xl font-bold text-blue-400">{state.round} passages</p>
+                <p className="text-xl font-bold text-blue-400">{Math.max(0, state.round - 1)} passages</p>
               </div>
             </div>
 

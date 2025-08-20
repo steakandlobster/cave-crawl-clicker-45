@@ -108,7 +108,7 @@ serve(async (req) => {
       gameCompleted = true;
       final_result = isSuccessful ? "win" : "loss";
       passages_navigated = isSuccessful ? max_rounds : Math.max(0, round_number - 1);
-      net_result = totalScore - (session.amount_wagered as number);
+      net_result = final_result === "win" ? totalScore - (session.amount_wagered as number) : -(session.amount_wagered as number);
 
       // Complete the session
       const { error: updateErr } = await supabase
