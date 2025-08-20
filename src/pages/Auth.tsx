@@ -1,109 +1,222 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GameHeader } from "@/components/GameHeader";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Pickaxe, Eye, EyeOff } from "lucide-react";
+import caveBackground from "@/assets/cave-background.jpg";
 
 export default function Auth() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: authSub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      if (session?.user) {
-        navigate("/", { replace: true });
+    // Check if user is already authenticated
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate('/');
       }
     });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) navigate("/", { replace: true });
-    });
-    return () => authSub.subscription.unsubscribe();
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSignup = async () => {
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: { username },
-        },
-      });
-      if (error) throw error;
-      toast({ title: "Check your email", description: "Confirm the sign up to continue." });
-    } catch (e: any) {
-      toast({ title: "Sign up failed", description: e?.message || String(e), variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleSignin = async () => {
-    setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      // Update last login
-      const user = (await supabase.auth.getUser()).data.user;
-      if (user) {
-        await supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", user.id);
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in to Cave Explorer.",
+        });
+      } else {
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              username: username || `Explorer${Date.now().toString().slice(-6)}`,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
+        });
       }
-      navigate("/", { replace: true });
-    } catch (e: any) {
-      toast({ title: "Sign in failed", description: e?.message || String(e), variant: "destructive" });
+    } catch (error: any) {
+      let errorMessage = "An error occurred during authentication.";
+      
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message.includes("User already registered")) {
+        errorMessage = "An account with this email already exists. Try signing in instead.";
+      } else if (error.message.includes("Password should be at least")) {
+        errorMessage = "Password should be at least 6 characters long.";
+      } else if (error.message.includes("Invalid email")) {
+        errorMessage = "Please enter a valid email address.";
+      }
+
+      toast({
+        title: "Authentication Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen cave-background">
-      <div className="relative z-10">
-        <GameHeader />
-        <div className="container mx-auto px-4 pt-24 pb-16 relative z-10 ml-96">
-          <div className="max-w-md mx-auto">
-            <Card className="p-6">
-              <h1 className="text-2xl font-bold mb-4">{mode === "signin" ? "Sign In" : "Create Account"}</h1>
-              {mode === "signup" && (
-                <div className="mb-4">
-                  <Label htmlFor="username">Username</Label>
-                  <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Explorer123" />
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${caveBackground})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-background/30" />
+      </div>
+
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Pickaxe className="w-8 h-8 text-treasure-gold" />
+              <h1 className="text-3xl font-bold bg-gradient-treasure bg-clip-text text-transparent">
+                Cave Explorer
+              </h1>
+            </div>
+            <h2 className="text-2xl font-bold">
+              {isLogin ? 'Welcome Back' : 'Join the Adventure'}
+            </h2>
+            <p className="text-muted-foreground">
+              {isLogin 
+                ? 'Sign in to continue your mining journey'
+                : 'Create an account to start exploring caves and earning ETH'
+              }
+            </p>
+          </div>
+
+          {/* Auth Form */}
+          <Card className="p-6">
+            <form onSubmit={handleAuth} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username (optional)</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Explorer123"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
                 </div>
               )}
-              <div className="mb-4">
+
+              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="explorer@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-              <div className="mb-6">
+
+              <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
-              <Button className="w-full" variant="treasure" disabled={loading} onClick={mode === "signin" ? handleSignin : handleSignup}>
-                {loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Sign Up"}
+
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-treasure text-primary-foreground hover:scale-105 transition-transform"
+                disabled={loading}
+              >
+                {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Create Account')}
               </Button>
-              <div className="text-sm text-center mt-4">
-                {mode === "signin" ? (
-                  <button className="underline" onClick={() => setMode("signup")}>Need an account? Sign up</button>
-                ) : (
-                  <button className="underline" onClick={() => setMode("signin")}>Have an account? Sign in</button>
-                )}
-              </div>
-              <div className="text-xs text-muted-foreground text-center mt-2">
-                After signing in you'll be redirected to start your game.
-              </div>
-            </Card>
+            </form>
+
+            <div className="mt-4 text-center">
+              <Button
+                variant="link"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {isLogin 
+                  ? "Don't have an account? Sign up" 
+                  : "Already have an account? Sign in"
+                }
+              </Button>
+            </div>
+          </Card>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Create an account to:</p>
+            <ul className="mt-2 space-y-1">
+              <li>• Track your mining statistics</li>
+              <li>• Compete on the global leaderboard</li>
+              <li>• Unlock achievements</li>
+              <li>• Share your progress</li>
+            </ul>
           </div>
         </div>
       </div>

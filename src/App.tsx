@@ -33,7 +33,16 @@ function RequireAuth({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) return null; // or a loader
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   if (!isAuthed) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
@@ -46,11 +55,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
-          <Route path="/game" element={<RequireAuth><Game /></RequireAuth>} />
-          <Route path="/exploration" element={<RequireAuth><Exploration /></RequireAuth>} />
-          <Route path="/game-over" element={<RequireAuth><GameOver /></RequireAuth>} />
-          <Route path="/victory" element={<RequireAuth><Victory /></RequireAuth>} />
+          <Route path="/" element={<Index />} />
+          <Route path="/game" element={<Game />} />
+          <Route path="/exploration" element={<Exploration />} />
+          <Route path="/game-over" element={<GameOver />} />
+          <Route path="/victory" element={<Victory />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

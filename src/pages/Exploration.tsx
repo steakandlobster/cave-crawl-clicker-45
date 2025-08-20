@@ -37,7 +37,7 @@ export default function Exploration() {
   const [currentToastId, setCurrentToastId] = useState<string | null>(null);
   
   const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
-  const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed } = useOverallStats();
+  const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed, refreshStats } = useOverallStats();
   const { achievements, addRoundsCleared, addGamesPlayed, addPathChoice, getNewlyUnlockedAchievements, syncWithDatabase } = useAchievements();
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
   const { dismiss } = useToast();
@@ -186,6 +186,12 @@ export default function Exploration() {
           const creditsSpent = state.credits;
           const netCredits = totalScore - creditsSpent;
           const previousAchievements = [...achievements];
+
+          // Refresh stats after game completion
+          setTimeout(() => {
+            refreshStats?.();
+            syncWithDatabase();
+          }, 1000);
 
           // Only update achievements since stats are now handled by backend
           addRoundsCleared(state.maxRounds);

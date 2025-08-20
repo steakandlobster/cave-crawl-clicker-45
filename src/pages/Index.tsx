@@ -186,6 +186,18 @@ const Index = () => {
       <div className="relative z-10">
         <GameHeader />
         
+        {/* Auth Link */}
+        <div className="fixed top-4 right-4 z-50">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/auth')}
+            className="bg-background/80 backdrop-blur-sm"
+          >
+            Sign In
+          </Button>
+        </div>
+        <GameHeader />
+        
         <div className="container mx-auto px-4 pt-24 pb-16 relative z-10 ml-96">
           
           <div className="max-w-4xl mx-auto">

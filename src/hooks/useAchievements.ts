@@ -137,17 +137,41 @@ export const useAchievements = () => {
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
 
-  // Load achievement data from localStorage
+  // Load achievements and sync with database
   useEffect(() => {
-    const saved = localStorage.getItem('cave-explorer-achievements');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setAchievementData(parsed);
-      } catch (error) {
-        console.warn('Failed to parse achievement data:', error);
+    const initializeAchievements = async () => {
+      // Load from localStorage first
+      const saved = localStorage.getItem('cave-explorer-achievements');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setAchievementData(parsed);
+        } catch (error) {
+          console.warn('Failed to parse achievement data:', error);
+        }
       }
-    }
+
+      // Then sync with database if authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setTimeout(() => {
+          syncWithDatabase();
+        }, 0);
+      }
+    };
+
+    initializeAchievements();
+
+    // Listen for auth changes and sync when user logs in
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setTimeout(() => {
+          syncWithDatabase();
+        }, 0);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Update achievements when data changes

@@ -55,7 +55,6 @@ export const useSessionStats = () => {
       sessionRounds: 0,
       sessionCredits: 0,
     });
-    // Don't remove from localStorage, just reset the state
     localStorage.setItem('cave-explorer-session-stats', JSON.stringify({
       sessionRounds: 0,
       sessionCredits: 0,
@@ -76,9 +75,44 @@ export const useOverallStats = () => {
     totalRoundsPlayed: 0,
     totalNetCredits: 0,
   });
+  const [loading, setLoading] = useState(false);
 
-  // Load stats from localStorage on mount
-  useEffect(() => {
+  // Fetch stats from database for authenticated users
+  const fetchFromDatabase = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setLoading(true);
+      
+      const { data: completedGames } = await supabase
+        .from('game_sessions')
+        .select('passages_navigated, net_result')
+        .eq('user_id', user.id)
+        .eq('status', 'completed');
+
+      if (completedGames) {
+        const totalGamesPlayed = completedGames.length;
+        const totalRoundsPlayed = completedGames.reduce((sum, game) => sum + (game.passages_navigated || 0), 0);
+        const totalNetCredits = completedGames.reduce((sum, game) => sum + (game.net_result || 0), 0);
+        
+        setOverallStats({
+          totalGamesPlayed,
+          totalRoundsPlayed,
+          totalNetCredits,
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to fetch stats from database:', error);
+      // Fall back to localStorage
+      loadFromLocalStorage();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load stats from localStorage (fallback)
+  const loadFromLocalStorage = () => {
     const savedStats = localStorage.getItem('cave-explorer-overall-stats');
     if (savedStats) {
       try {
@@ -88,9 +122,35 @@ export const useOverallStats = () => {
         console.warn('Failed to parse saved stats:', error);
       }
     }
+  };
+
+  // Load stats on mount and auth changes
+  useEffect(() => {
+    const checkAuthAndLoad = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await fetchFromDatabase();
+      } else {
+        loadFromLocalStorage();
+      }
+    };
+
+    checkAuthAndLoad();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setTimeout(() => {
+          fetchFromDatabase();
+        }, 0);
+      } else {
+        loadFromLocalStorage();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Save stats to localStorage whenever they change
+  // Save to localStorage when stats change (for non-authenticated users)
   useEffect(() => {
     localStorage.setItem('cave-explorer-overall-stats', JSON.stringify(overallStats));
   }, [overallStats]);
@@ -116,10 +176,16 @@ export const useOverallStats = () => {
     }));
   };
 
+  const refreshStats = async () => {
+    await fetchFromDatabase();
+  };
+
   return {
     overallStats,
+    loading,
     incrementGamesPlayed,
     addRoundsPlayed,
     addNetCredits,
+    refreshStats,
   };
 };
