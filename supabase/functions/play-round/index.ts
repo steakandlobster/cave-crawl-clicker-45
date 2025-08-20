@@ -67,11 +67,9 @@ serve(async (req) => {
       });
     }
 
-    const trapIndex = round.trapIndex as number;
-    const payouts = (round.payouts as number[]) || [0, 0, 0];
-
-    const isSuccessful = option_index !== trapIndex;
-    const treasureFound = isSuccessful ? Number(payouts[option_index] || 0) : 0;
+    const outcome = round.outcomes[option_index];
+    const isSuccessful = !outcome.isTrapped;
+    const treasureFound = outcome.payout;
 
     // Insert round log
     const { error: roundErr } = await supabase.from("game_rounds").insert({
