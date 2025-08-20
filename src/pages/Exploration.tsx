@@ -180,6 +180,59 @@ export default function Exploration() {
       });
       setCurrentToastId(toastResult.id);
 
+      // Check if this is the final round - if so, go directly to victory
+      if (gameCompleted || nextRound > state.maxRounds) {
+        console.log("Game completed! Navigating to victory");
+        const creditsSpent = state.credits;
+        const netCredits = totalScore - creditsSpent;
+        const previousAchievements = [...achievements];
+
+        // Dismiss the toast immediately for final round
+        setTimeout(() => {
+          if (currentToastId) {
+            dismiss(currentToastId);
+            setCurrentToastId(null);
+          }
+        }, 1500);
+
+        // Refresh stats after game completion
+        setTimeout(() => {
+          refreshStats?.();
+          syncWithDatabase();
+          // Update session stats from database after game completion
+          if (sessionId) {
+            updateSessionStatsFromGame(sessionId);
+          }
+        }, 1000);
+
+        // Only update achievements since stats are now handled by backend
+        addRoundsCleared(state.maxRounds);
+
+        const riskLevels = ['low', 'medium', 'high'];
+        const riskLevel = riskLevels[optionIndex % 3];
+        const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
+        addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
+
+        setTimeout(() => {
+          const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
+          if (newlyUnlocked.length > 0) {
+            setNewAchievements(newlyUnlocked);
+          }
+        }, 100);
+
+        navigate("/victory", {
+          state: {
+            success: true,
+            totalScore: totalScore,
+            roundsCompleted: state.maxRounds,
+            initialCredits: state.credits,
+          },
+          replace: true,
+        });
+        return;
+      }
+
+      // Not final round - show progression screen
       setShowProgression(true);
 
       const handleProgressionComplete = () => {
@@ -187,49 +240,6 @@ export default function Exploration() {
         if (currentToastId) {
           dismiss(currentToastId);
           setCurrentToastId(null);
-        }
-
-        if (gameCompleted || nextRound > state.maxRounds) {
-          console.log("Game completed! Navigating to victory");
-          const creditsSpent = state.credits;
-          const netCredits = totalScore - creditsSpent;
-          const previousAchievements = [...achievements];
-
-          // Refresh stats after game completion
-          setTimeout(() => {
-            refreshStats?.();
-            syncWithDatabase();
-            // Update session stats from database after game completion
-            if (sessionId) {
-              updateSessionStatsFromGame(sessionId);
-            }
-          }, 1000);
-
-          // Only update achievements since stats are now handled by backend
-          addRoundsCleared(state.maxRounds);
-
-          const riskLevels = ['low', 'medium', 'high'];
-          const riskLevel = riskLevels[optionIndex % 3];
-          const pathType = riskLevel === 'low' ? 'safe' : riskLevel === 'medium' ? 'risky' : 'dangerous';
-          addPathChoice(pathType as 'safe' | 'risky' | 'dangerous');
-
-          setTimeout(() => {
-            const newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
-            if (newlyUnlocked.length > 0) {
-              setNewAchievements(newlyUnlocked);
-            }
-          }, 100);
-
-          navigate("/victory", {
-            state: {
-              success: true,
-              totalScore: totalScore,
-              roundsCompleted: state.maxRounds,
-              initialCredits: state.credits,
-            },
-            replace: true,
-          });
-          return;
         }
 
         console.log("Continuing to next round");
