@@ -12,7 +12,7 @@ import { StatsSidebar } from "@/components/StatsSidebar";
 import { toast, useToast } from "@/hooks/use-toast";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
-import { getCaveImage } from "@/lib/cave-images";
+import { getCaveImageStable } from "@/lib/cave-images";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ExplorationState {
@@ -48,20 +48,20 @@ export default function Exploration() {
     
     const images: string[] = [];
     const usedInThisRound: string[] = [];
+    const riskLevels: Array<'low' | 'medium' | 'high'> = ['low', 'medium', 'high'];
     
     // Always generate 3 options: safe, risky, dangerous
     for (let i = 0; i < 3; i++) {
-      const riskLevels = ['low', 'medium', 'high'];
-      const riskLevel = riskLevels[i % 3] as 'low' | 'medium' | 'high';
-      
-      // Get unique image for this option, avoiding duplicates in this round
-      const imageUrl = getCaveImage(riskLevel, usedInThisRound);
+      const riskLevel = riskLevels[i % 3];
+      const key = `${state.sessionId}-${state.round}-${i}`;
+      // Deterministic unique image for this option to avoid swaps
+      const imageUrl = getCaveImageStable(riskLevel, key, usedInThisRound);
       images.push(imageUrl);
       usedInThisRound.push(imageUrl);
     }
     
     return images;
-  }, [state?.round]); // Only re-generate when round changes
+  }, [state?.sessionId, state?.round]); // Only re-generate when session or round changes
 
   // Stable reference to incrementGamesPlayed to prevent infinite re-renders
   const stableIncrementGamesPlayed = useCallback(() => {
@@ -152,6 +152,14 @@ export default function Exploration() {
             setNewAchievements(newlyUnlocked);
           }
         }, 100);
+
+        // Refresh stats after game completion (loss)
+        setTimeout(() => {
+          refreshStats?.();
+          if (sessionId) {
+            updateSessionStatsFromGame(sessionId);
+          }
+        }, 1000);
 
         navigate("/game-over", {
           state: {

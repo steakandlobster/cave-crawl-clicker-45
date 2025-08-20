@@ -25,7 +25,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  const { sessionStats, resetSession, sessionId } = useSessionStats();
+  const { sessionStats, resetSession, sessionId, updateSessionStatsFromGame } = useSessionStats();
   const { overallStats } = useOverallStats();
   const { achievements, updateDailyStreak } = useAchievements();
 

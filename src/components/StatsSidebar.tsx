@@ -7,6 +7,7 @@ interface StatsSidebarProps {
   sessionStats?: {
     sessionRounds: number;
     sessionCredits: number;
+    sessionGames?: number;
   };
   overallStats?: {
     totalGamesPlayed: number;
@@ -49,7 +50,7 @@ export const StatsSidebar = ({ sessionStats, overallStats }: StatsSidebarProps) 
                 <div className="space-y-2">
                   <div>
                     <p className="text-xs text-muted-foreground">Games</p>
-                    <p className="text-lg font-bold">1</p>
+                    <p className="text-lg font-bold">{sessionStats.sessionGames ?? 0}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Passages Explored</p>

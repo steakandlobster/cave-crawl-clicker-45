@@ -32,6 +32,26 @@ export const getCaveImage = (riskLevel: 'low' | 'medium' | 'high', usedInThisRou
   return imagesToChooseFrom[randomIndex];
 };
 
+// Deterministic image selection to avoid swaps across reloads
+export const getCaveImageStable = (riskLevel: 'low' | 'medium' | 'high', key: string, usedInThisRound: string[] = []): string => {
+  const availableImages = caveImages[riskLevel];
+  // Simple string hash
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash << 5) - hash + key.charCodeAt(i);
+    hash |= 0;
+  }
+  // Try to find a non-duplicate deterministically
+  for (let offset = 0; offset < availableImages.length; offset++) {
+    const idx = Math.abs(hash + offset) % availableImages.length;
+   const candidate = availableImages[idx];
+    if (!usedInThisRound.includes(candidate)) {
+      return candidate;
+    }
+  }
+  return availableImages[Math.abs(hash) % availableImages.length];
+};
+
 export const resetImageRotation = () => {
   usedImages.clear();
 };

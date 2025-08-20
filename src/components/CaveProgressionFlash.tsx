@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import caveProgression from "@/assets/cave-progression.jpg";
 
 interface CaveProgressionFlashProps {
@@ -27,11 +28,15 @@ export const CaveProgressionFlash = ({ onComplete }: CaveProgressionFlashProps) 
       }`}
     >
       <div className="relative max-w-4xl mx-auto">
-        <img
-          src={caveProgression}
-          alt="Progressing through the cave"
-          className="w-full h-auto rounded-lg shadow-2xl"
-        />
+        <AspectRatio ratio={16 / 9}>
+          <img
+            src={caveProgression}
+            alt="Progressing through the cave"
+            className="w-full h-full object-cover rounded-lg shadow-2xl"
+            loading="eager"
+            decoding="async"
+          />
+        </AspectRatio>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-white">
             <h2 className="text-4xl font-bold mb-2 text-treasure-gold animate-glow-pulse">

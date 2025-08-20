@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface SessionStats {
   sessionRounds: number;
   sessionCredits: number; // Net credits (score - credits spent)
+  sessionGames: number; // Distinct games started in this session
 }
 
 interface OverallStats {
@@ -13,9 +14,19 @@ interface OverallStats {
 }
 
 export const useSessionStats = () => {
-  const [sessionStats, setSessionStats] = useState<SessionStats>({
-    sessionRounds: 0,
-    sessionCredits: 0,
+  const [sessionStats, setSessionStats] = useState<SessionStats>(() => {
+    const saved = localStorage.getItem('cave-explorer-session-stats');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          sessionRounds: parsed.sessionRounds || 0,
+          sessionCredits: parsed.sessionCredits || 0,
+          sessionGames: parsed.sessionGames || 0,
+        } as SessionStats;
+      } catch (e) {}
+    }
+    return { sessionRounds: 0, sessionCredits: 0, sessionGames: 0 } as SessionStats;
   });
   const [sessionId, setSessionId] = useState<string | null>(null);
 
@@ -31,8 +42,8 @@ export const useSessionStats = () => {
       localStorage.setItem('cave-explorer-session-id', currentSessionId);
       localStorage.setItem('cave-explorer-session-start', now.toString());
       // Reset session stats for new session
-      setSessionStats({ sessionRounds: 0, sessionCredits: 0 });
-      localStorage.setItem('cave-explorer-session-stats', JSON.stringify({ sessionRounds: 0, sessionCredits: 0 }));
+      setSessionStats({ sessionRounds: 0, sessionCredits: 0, sessionGames: 0 });
+      localStorage.setItem('cave-explorer-session-stats', JSON.stringify({ sessionRounds: 0, sessionCredits: 0, sessionGames: 0 }));
     } else {
       // Load existing session stats
       const savedSessionStats = localStorage.getItem('cave-explorer-session-stats');
@@ -74,23 +85,21 @@ export const useSessionStats = () => {
     try {
       const { data: sessionGames } = await supabase
         .from('game_sessions')
-        .select('passages_navigated, net_result')
-        .eq('session_id', sessionId)
-        .eq('status', 'completed');
+        .select('id, passages_navigated, net_result')
+        .eq('session_id', sessionId);
 
       if (sessionGames && sessionGames.length > 0) {
-        const sessionRounds = sessionGames.reduce((sum, game) => sum + (game.passages_navigated || 0), 0);
-        const sessionCredits = sessionGames.reduce((sum, game) => sum + (game.net_result || 0), 0);
-        
-        setSessionStats({
+        const sessionRounds = sessionGames.reduce((sum: number, game: any) => sum + (game.passages_navigated || 0), 0);
+        const sessionCredits = sessionGames.reduce((sum: number, game: any) => sum + (game.net_result || 0), 0);
+        const sessionGamesCount = new Set(sessionGames.map((g: any) => g.id)).size;
+
+        const newStats: SessionStats = {
           sessionRounds,
           sessionCredits,
-        });
-        
-        localStorage.setItem('cave-explorer-session-stats', JSON.stringify({
-          sessionRounds,
-          sessionCredits,
-        }));
+          sessionGames: sessionGamesCount,
+        };
+        setSessionStats(newStats);
+        localStorage.setItem('cave-explorer-session-stats', JSON.stringify(newStats));
       }
     } catch (error) {
       console.warn('Failed to update session stats from database:', error);
@@ -103,12 +112,14 @@ export const useSessionStats = () => {
     setSessionStats({
       sessionRounds: 0,
       sessionCredits: 0,
+      sessionGames: 0,
     });
     localStorage.setItem('cave-explorer-session-id', newSessionId);
     localStorage.setItem('cave-explorer-session-start', Date.now().toString());
     localStorage.setItem('cave-explorer-session-stats', JSON.stringify({
       sessionRounds: 0,
       sessionCredits: 0,
+      sessionGames: 0,
     }));
   };
 
@@ -123,10 +134,16 @@ export const useSessionStats = () => {
 };
 
 export const useOverallStats = () => {
-  const [overallStats, setOverallStats] = useState<OverallStats>({
-    totalGamesPlayed: 0,
-    totalRoundsPlayed: 0,
-    totalNetCredits: 0,
+  const [overallStats, setOverallStats] = useState<OverallStats>(() => {
+    const saved = localStorage.getItem('cave-explorer-overall-stats');
+    if (saved) {
+      try { return JSON.parse(saved) as OverallStats; } catch {}
+    }
+    return {
+      totalGamesPlayed: 0,
+      totalRoundsPlayed: 0,
+      totalNetCredits: 0,
+    } as OverallStats;
   });
   const [loading, setLoading] = useState(false);
 
