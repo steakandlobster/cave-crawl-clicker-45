@@ -15,7 +15,7 @@ export const SocialSharing = ({ totalScore, roundsCompleted, isVictory, referral
   const shareText = referralMode 
     ? `🏴‍☠️ Join me in Cave Explorer - the ultimate ETH treasure hunting game! Navigate dangerous cave passages and escape with cryptocurrency treasures! ⚡🪙`
     : isVictory 
-      ? `🏆 I just escaped the Cave Explorer game with ${totalScore.toFixed(3)} ETH treasure after surviving ${roundsCompleted} rounds! Think you can do better? 🪙⚡`
+      ? `🏆 I just escaped the Cave Explorer game with ${totalScore.toFixed(totalScore !== 0 && Math.abs(totalScore) < 0.001 ? 5 : Math.abs(totalScore) < 0.01 ? 4 : 3)} ETH treasure after surviving ${roundsCompleted} rounds! Think you can do better? 🪙⚡`
       : `💀 I made it through ${roundsCompleted} rounds in Cave Explorer but didn't escape! The caves got me in the end. Can you survive longer? 🏴‍☠️⛏️`;
 
   const gameUrl = window.location.origin;

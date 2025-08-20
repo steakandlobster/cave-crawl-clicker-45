@@ -149,7 +149,15 @@ export const GlobalLeaderboard = () => {
   }, [isOpen, userId]);
 
   const formatCredits = (credits: number) => {
-    return credits >= 0 ? `+${credits.toFixed(3)}` : `${credits.toFixed(3)}`;
+    // Show at least 5 significant digits or 3 decimal places, whichever is more
+    const absValue = Math.abs(credits);
+    let precision = 3;
+    if (absValue > 0 && absValue < 0.001) {
+      precision = 5;
+    } else if (absValue < 0.01) {
+      precision = 4;
+    }
+    return credits >= 0 ? `+${credits.toFixed(precision)}` : `${credits.toFixed(precision)}`;
   };
 
   const getCreditsColor = (credits: number) => {

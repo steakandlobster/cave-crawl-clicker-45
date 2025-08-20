@@ -122,39 +122,6 @@ serve(async (req) => {
         })
         .eq("id", session_id);
       if (updateErr) throw updateErr;
-
-      // Update leaderboard (today only)
-      const today = new Date().toISOString().split("T")[0];
-      const { data: profile, error: profErr } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (profErr) throw profErr;
-      const username = profile?.username || "Explorer";
-
-      const roundsPlayed = isSuccessful ? max_rounds : round_number; // counts the losing click as played
-
-      // Update leaderboard with UPSERT to avoid duplicate key errors
-      const { error: leaderboardErr } = await supabase
-        .from("global_leaderboard")
-        .upsert({
-          id: user.id,
-          username,
-          date: today,
-          daily_rounds: roundsPlayed,
-          daily_net_credits: net_result || 0,
-          total_rounds: roundsPlayed,
-          total_net_credits: net_result || 0,
-        }, {
-          onConflict: 'id,date',
-          ignoreDuplicates: false
-        });
-      
-      if (leaderboardErr) {
-        console.error("Leaderboard update error:", leaderboardErr);
-        // Continue without failing the game completion
-      }
     }
 
     return new Response(

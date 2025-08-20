@@ -167,7 +167,7 @@ export default function Exploration() {
 
       const toastResult = toast({
         title: "Safe Passage!",
-        description: `You mined ${treasureFound.toFixed(3)} ETH and advanced safely!`,
+        description: `You mined ${treasureFound.toFixed(treasureFound !== 0 && Math.abs(treasureFound) < 0.001 ? 5 : Math.abs(treasureFound) < 0.01 ? 4 : 3)} ETH and advanced safely!`,
         duration: 2000,
       });
       setCurrentToastId(toastResult.id);
@@ -378,11 +378,11 @@ export default function Exploration() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Initial Bet</p>
-                  <p className="text-lg font-bold">{state.credits.toFixed(3)} ETH</p>
+                  <p className="text-lg font-bold">{state.credits.toFixed(state.credits !== 0 && Math.abs(state.credits) < 0.001 ? 5 : Math.abs(state.credits) < 0.01 ? 4 : 3)} ETH</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Current Winnings</p>
-                  <p className="text-lg font-bold text-treasure-gold">{(state.score || 0).toFixed(3)} ETH</p>
+                  <p className="text-lg font-bold text-treasure-gold">{(state.score || 0).toFixed((state.score || 0) !== 0 && Math.abs(state.score || 0) < 0.001 ? 5 : Math.abs(state.score || 0) < 0.01 ? 4 : 3)} ETH</p>
                 </div>
               </div>
             </Card>

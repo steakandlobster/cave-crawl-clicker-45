@@ -58,7 +58,7 @@ export const StatsSidebar = ({ sessionStats, overallStats }: StatsSidebarProps) 
                   <div>
                     <p className="text-xs text-muted-foreground">Net Gain/Loss</p>
                     <p className={`text-lg font-bold ${sessionStats.sessionCredits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits.toFixed(3)} ETH
+                      {sessionStats.sessionCredits >= 0 ? '+' : ''}{sessionStats.sessionCredits.toFixed(sessionStats.sessionCredits !== 0 && Math.abs(sessionStats.sessionCredits) < 0.001 ? 5 : Math.abs(sessionStats.sessionCredits) < 0.01 ? 4 : 3)} ETH
                     </p>
                   </div>
                 </div>
@@ -81,7 +81,7 @@ export const StatsSidebar = ({ sessionStats, overallStats }: StatsSidebarProps) 
                   <div>
                     <p className="text-xs text-muted-foreground">Net Gain/Loss</p>
                     <p className={`text-lg font-bold ${overallStats.totalNetCredits >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits.toFixed(3)} ETH
+                      {overallStats.totalNetCredits >= 0 ? '+' : ''}{overallStats.totalNetCredits.toFixed(overallStats.totalNetCredits !== 0 && Math.abs(overallStats.totalNetCredits) < 0.001 ? 5 : Math.abs(overallStats.totalNetCredits) < 0.01 ? 4 : 3)} ETH
                     </p>
                   </div>
                 </div>

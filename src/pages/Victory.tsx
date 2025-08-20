@@ -77,16 +77,16 @@ export default function Victory() {
                 <Coins className="w-5 h-5 text-treasure-gold" />
                 <span className="font-semibold">Total ETH mined</span>
               </div>
-              <p className="text-2xl font-bold text-treasure-gold">{state.totalScore.toFixed(3)} ETH</p>
+              <p className="text-2xl font-bold text-treasure-gold">{state.totalScore.toFixed(state.totalScore !== 0 && Math.abs(state.totalScore) < 0.001 ? 5 : Math.abs(state.totalScore) < 0.01 ? 4 : 3)} ETH</p>
             </div>
 
             <div className={`p-4 rounded-lg border ${isProfit ? 'bg-green-500/20 border-green-500/30' : 'bg-yellow-500/20 border-yellow-500/30'}`}>
               <p className="text-sm text-muted-foreground mb-1">Net Result</p>
               <p className={`text-xl font-bold ${isProfit ? 'text-green-400' : 'text-yellow-400'}`}>
-                {isProfit ? '+' : ''}{netGain.toFixed(3)} ETH
+                {isProfit ? '+' : ''}{netGain.toFixed(netGain !== 0 && Math.abs(netGain) < 0.001 ? 5 : Math.abs(netGain) < 0.01 ? 4 : 3)} ETH
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                (Started with {state.initialCredits.toFixed(3)} ETH)
+                (Started with {state.initialCredits.toFixed(state.initialCredits !== 0 && Math.abs(state.initialCredits) < 0.001 ? 5 : Math.abs(state.initialCredits) < 0.01 ? 4 : 3)} ETH)
               </p>
             </div>
         </div>
