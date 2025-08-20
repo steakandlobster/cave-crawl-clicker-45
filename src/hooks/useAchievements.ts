@@ -76,6 +76,22 @@ const ACHIEVEMENT_DEFINITIONS = [
     progressFn: (data: AchievementData) => ({ current: data.totalRoundsCleared, max: 500 }),
   },
   {
+    id: 'rounds_1000',
+    name: 'Cave Master',
+    description: 'Mine 1000 total passages',
+    icon: 'Shield',
+    checkFn: (data: AchievementData) => data.totalRoundsCleared >= 1000,
+    progressFn: (data: AchievementData) => ({ current: data.totalRoundsCleared, max: 1000 }),
+  },
+  {
+    id: 'games_10',
+    name: 'Persistent Miner',
+    description: 'Play 10 total games',
+    icon: '🎯',
+    checkFn: (data: AchievementData) => data.totalGamesPlayed >= 10,
+    progressFn: (data: AchievementData) => ({ current: data.totalGamesPlayed, max: 10 }),
+  },
+  {
     id: 'games_50',
     name: 'Persistent Miner',
     description: 'Play 50 total games',

@@ -14,8 +14,8 @@ export const CaveProgressionFlash = ({ onComplete }: CaveProgressionFlashProps) 
       setIsVisible(false);
       setTimeout(() => {
         onComplete();
-      }, 100); // Wait for fade out animation
-    }, 1000); // Show for 1 second
+      }, 500); // Wait for fade out animation
+    }, 2000); // Show for 2 seconds
 
     return () => clearTimeout(timer);
   }, [onComplete]);
