@@ -70,6 +70,33 @@ export const useSessionStats = () => {
     }));
   };
 
+  const updateSessionStatsFromGame = async (sessionId: string) => {
+    try {
+      const { data: sessionGames } = await supabase
+        .from('game_sessions')
+        .select('passages_navigated, net_result')
+        .eq('session_id', sessionId)
+        .eq('status', 'completed');
+
+      if (sessionGames && sessionGames.length > 0) {
+        const sessionRounds = sessionGames.reduce((sum, game) => sum + (game.passages_navigated || 0), 0);
+        const sessionCredits = sessionGames.reduce((sum, game) => sum + (game.net_result || 0), 0);
+        
+        setSessionStats({
+          sessionRounds,
+          sessionCredits,
+        });
+        
+        localStorage.setItem('cave-explorer-session-stats', JSON.stringify({
+          sessionRounds,
+          sessionCredits,
+        }));
+      }
+    } catch (error) {
+      console.warn('Failed to update session stats from database:', error);
+    }
+  };
+
   const resetSession = () => {
     const newSessionId = crypto.randomUUID();
     setSessionId(newSessionId);
@@ -91,6 +118,7 @@ export const useSessionStats = () => {
     addSessionRounds,
     addSessionCredits,
     resetSession,
+    updateSessionStatsFromGame,
   };
 };
 
@@ -121,11 +149,16 @@ export const useOverallStats = () => {
         const totalRoundsPlayed = completedGames.reduce((sum, game) => sum + (game.passages_navigated || 0), 0);
         const totalNetCredits = completedGames.reduce((sum, game) => sum + (game.net_result || 0), 0);
         
-        setOverallStats({
+        const newStats = {
           totalGamesPlayed,
           totalRoundsPlayed,
           totalNetCredits,
-        });
+        };
+        
+        setOverallStats(newStats);
+        // Cache the fetched data
+        localStorage.setItem('cave-explorer-overall-stats', JSON.stringify(newStats));
+        localStorage.setItem('cave-explorer-last-fetch', Date.now().toString());
       }
     } catch (error) {
       console.warn('Failed to fetch stats from database:', error);
@@ -154,14 +187,13 @@ export const useOverallStats = () => {
     const checkAuthAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Only fetch if we don't have recent data (less than 5 seconds old)
+        // Load from cache first for immediate display
+        loadFromLocalStorage();
+        // Then fetch fresh data in background if needed
         const now = Date.now();
         const lastFetch = localStorage.getItem('cave-explorer-last-fetch');
-        if (!lastFetch || now - parseInt(lastFetch) > 5000) {
+        if (!lastFetch || now - parseInt(lastFetch) > 30000) { // 30 seconds cache
           await fetchFromDatabase();
-          localStorage.setItem('cave-explorer-last-fetch', now.toString());
-        } else {
-          loadFromLocalStorage();
         }
       } else {
         loadFromLocalStorage();
@@ -174,7 +206,6 @@ export const useOverallStats = () => {
       if (session) {
         setTimeout(() => {
           fetchFromDatabase();
-          localStorage.setItem('cave-explorer-last-fetch', Date.now().toString());
         }, 0);
       } else {
         loadFromLocalStorage();

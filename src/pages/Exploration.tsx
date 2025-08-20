@@ -36,7 +36,7 @@ export default function Exploration() {
   const [progressionCompleteHandler, setProgressionCompleteHandler] = useState<() => void>(() => () => {});
   const [currentToastId, setCurrentToastId] = useState<string | null>(null);
   
-  const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
+  const { sessionStats, addSessionRounds, addSessionCredits, sessionId, updateSessionStatsFromGame } = useSessionStats();
   const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed, refreshStats } = useOverallStats();
   const { achievements, addRoundsCleared, addGamesPlayed, addPathChoice, getNewlyUnlockedAchievements, syncWithDatabase } = useAchievements();
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
@@ -168,7 +168,7 @@ export default function Exploration() {
       const toastResult = toast({
         title: "Safe Passage!",
         description: `You mined ${treasureFound.toFixed(treasureFound !== 0 && Math.abs(treasureFound) < 0.001 ? 5 : Math.abs(treasureFound) < 0.01 ? 4 : 3)} ETH and advanced safely!`,
-        duration: 2000,
+        duration: 1500,
       });
       setCurrentToastId(toastResult.id);
 
@@ -191,6 +191,10 @@ export default function Exploration() {
           setTimeout(() => {
             refreshStats?.();
             syncWithDatabase();
+            // Update session stats from database after game completion
+            if (sessionId) {
+              updateSessionStatsFromGame(sessionId);
+            }
           }, 1000);
 
           // Only update achievements since stats are now handled by backend

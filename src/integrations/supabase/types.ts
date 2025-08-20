@@ -104,6 +104,7 @@ export type Database = {
           net_result: number | null
           passages_navigated: number | null
           pre_generated_results: Json
+          session_id: string | null
           status: string
           updated_at: string
           user_choices: Json | null
@@ -119,6 +120,7 @@ export type Database = {
           net_result?: number | null
           passages_navigated?: number | null
           pre_generated_results: Json
+          session_id?: string | null
           status?: string
           updated_at?: string
           user_choices?: Json | null
@@ -134,6 +136,7 @@ export type Database = {
           net_result?: number | null
           passages_navigated?: number | null
           pre_generated_results?: Json
+          session_id?: string | null
           status?: string
           updated_at?: string
           user_choices?: Json | null

@@ -103,6 +103,9 @@ export const GlobalLeaderboard = () => {
       // Update user stats first
       await updateUserStats();
 
+      // Add a small delay to ensure user stats are updated
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Fetch daily leaderboard
       const { data: dailyData, error: dailyError } = await supabase
         .from('global_leaderboard')

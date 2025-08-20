@@ -43,7 +43,8 @@ serve(async (req) => {
       amount_wagered,
       max_rounds = 6,
       client_seed = "",
-    }: { amount_wagered: number; max_rounds?: number; client_seed?: string } = await req.json();
+      session_id,
+    }: { amount_wagered: number; max_rounds?: number; client_seed?: string; session_id?: string } = await req.json();
 
     // Auth check
     const {
@@ -110,6 +111,7 @@ serve(async (req) => {
         pre_generated_results,
         amount_wagered,
         status: "in_progress",
+        session_id: session_id || crypto.randomUUID(),
       })
       .select("id")
       .single();

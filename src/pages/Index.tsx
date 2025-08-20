@@ -25,7 +25,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  const { sessionStats, resetSession } = useSessionStats();
+  const { sessionStats, resetSession, sessionId } = useSessionStats();
   const { overallStats } = useOverallStats();
   const { achievements, updateDailyStreak } = useAchievements();
 
@@ -131,6 +131,7 @@ const Index = () => {
           amount_wagered: credits,
           max_rounds: 6,
           client_seed: String(Date.now()),
+          session_id: sessionId, // Pass the session ID from useSessionStats
         },
       });
 
