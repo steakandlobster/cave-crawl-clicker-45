@@ -106,6 +106,7 @@ export type Database = {
           pre_generated_results: Json
           status: string
           updated_at: string
+          user_choices: Json | null
           user_id: string
         }
         Insert: {
@@ -120,6 +121,7 @@ export type Database = {
           pre_generated_results: Json
           status?: string
           updated_at?: string
+          user_choices?: Json | null
           user_id: string
         }
         Update: {
@@ -134,6 +136,7 @@ export type Database = {
           pre_generated_results?: Json
           status?: string
           updated_at?: string
+          user_choices?: Json | null
           user_id?: string
         }
         Relationships: [

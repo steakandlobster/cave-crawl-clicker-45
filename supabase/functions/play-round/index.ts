@@ -71,23 +71,31 @@ serve(async (req) => {
     const isSuccessful = !outcome.isTrapped;
     const treasureFound = outcome.payout;
 
-    // Insert round log
-    const { error: roundErr } = await supabase.from("game_rounds").insert({
-      game_session_id: session_id,
-      round_number,
-      cave_selected: option_index,
-      treasure_found: isSuccessful ? "treasure" : "trap",
+    // Get current user choices and add this round's choice
+    const { data: currentSession, error: getSessionErr } = await supabase
+      .from("game_sessions")
+      .select("user_choices")
+      .eq("id", session_id)
+      .single();
+    if (getSessionErr) throw getSessionErr;
+
+    const userChoices = (currentSession.user_choices as any[]) || [];
+    userChoices.push({
+      round: round_number,
+      option_selected: option_index,
+      was_successful: isSuccessful,
       credits_won: treasureFound,
     });
-    if (roundErr) throw roundErr;
 
-    // Calculate total winnings so far
-    const { data: sumRows, error: sumErr } = await supabase
-      .from("game_rounds")
-      .select("credits_won")
-      .eq("game_session_id", session_id);
-    if (sumErr) throw sumErr;
-    const totalScore = (sumRows || []).reduce((acc: number, r: any) => acc + (r.credits_won || 0), 0);
+    // Update session with the new choice
+    const { error: updateChoicesErr } = await supabase
+      .from("game_sessions")
+      .update({ user_choices: userChoices })
+      .eq("id", session_id);
+    if (updateChoicesErr) throw updateChoicesErr;
+
+    // Calculate total winnings from user choices
+    const totalScore = userChoices.reduce((acc: number, choice: any) => acc + (choice.credits_won || 0), 0);
 
     let gameCompleted = false;
     let final_result: "win" | "loss" | null = null;
