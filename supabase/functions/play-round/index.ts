@@ -135,30 +135,10 @@ serve(async (req) => {
 
       const roundsPlayed = isSuccessful ? max_rounds : round_number; // counts the losing click as played
 
-      // Get existing row for today
-      const { data: existing, error: getLbErr } = await supabase
+      // Update leaderboard with UPSERT to avoid duplicate key errors
+      const { error: leaderboardErr } = await supabase
         .from("global_leaderboard")
-        .select("id,daily_rounds,daily_net_credits,total_rounds,total_net_credits")
-        .eq("id", user.id)
-        .eq("date", today)
-        .maybeSingle();
-      if (getLbErr) throw getLbErr;
-
-      if (existing) {
-        const { error: updLbErr } = await supabase
-          .from("global_leaderboard")
-          .update({
-            username,
-            daily_rounds: (existing.daily_rounds || 0) + roundsPlayed,
-            daily_net_credits: (existing.daily_net_credits || 0) + (net_result || 0),
-            total_rounds: (existing.total_rounds || 0) + roundsPlayed,
-            total_net_credits: (existing.total_net_credits || 0) + (net_result || 0),
-          })
-          .eq("id", user.id)
-          .eq("date", today);
-        if (updLbErr) throw updLbErr;
-      } else {
-        const { error: insLbErr } = await supabase.from("global_leaderboard").insert({
+        .upsert({
           id: user.id,
           username,
           date: today,
@@ -166,8 +146,14 @@ serve(async (req) => {
           daily_net_credits: net_result || 0,
           total_rounds: roundsPlayed,
           total_net_credits: net_result || 0,
+        }, {
+          onConflict: 'id,date',
+          ignoreDuplicates: false
         });
-        if (insLbErr) throw insLbErr;
+      
+      if (leaderboardErr) {
+        console.error("Leaderboard update error:", leaderboardErr);
+        // Continue without failing the game completion
       }
     }
 

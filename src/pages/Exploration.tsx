@@ -232,13 +232,28 @@ export default function Exploration() {
       setProgressionCompleteHandler(() => handleProgressionComplete);
     } catch (error) {
       console.error("Navigation error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Could not process your choice. Please try again.",
-        variant: "destructive",
-      });
       setIsProcessing(false);
       setSelectedOption(null);
+      
+      // If it's a connection error, provide recovery option
+      if (error instanceof Error && error.message.includes("Edge Function returned a non-2xx")) {
+        toast({
+          title: "Connection Error",
+          description: "Game state may be inconsistent. Returning to main menu in 3 seconds.",
+          variant: "destructive",
+          duration: 3000,
+        });
+        // Provide escape route to prevent getting stuck
+        setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 3000);
+      } else {
+        toast({
+          title: "Connection Error",
+          description: "Could not process your choice. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
