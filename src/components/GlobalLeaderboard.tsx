@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, TrendingUp, TrendingDown, Calendar, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
+import { useAchievements } from "@/hooks/useAchievements";
 
 interface LeaderboardEntry {
   id: string;
@@ -26,6 +27,7 @@ export const GlobalLeaderboard = () => {
   
   const { sessionStats } = useSessionStats();
   const { overallStats } = useOverallStats();
+  const { syncWithDatabase } = useAchievements();
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,16 +51,36 @@ export const GlobalLeaderboard = () => {
         
       const username = profile?.username || `Explorer${userId.slice(-6)}`;
       
-      // Update or insert user stats
+      // Get actual stats from completed games instead of localStorage
+      const { data: dailyGames } = await supabase
+        .from('game_sessions')
+        .select('passages_navigated, net_result')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('completed_at', today + 'T00:00:00Z')
+        .lt('completed_at', today + 'T23:59:59Z');
+
+      const { data: allGames } = await supabase
+        .from('game_sessions')
+        .select('passages_navigated, net_result')
+        .eq('user_id', userId)
+        .eq('status', 'completed');
+
+      const dailyRounds = dailyGames?.reduce((sum, game) => sum + (game.passages_navigated || 0), 0) || 0;
+      const dailyNetCredits = dailyGames?.reduce((sum, game) => sum + (game.net_result || 0), 0) || 0;
+      const totalRounds = allGames?.reduce((sum, game) => sum + (game.passages_navigated || 0), 0) || 0;
+      const totalNetCredits = allGames?.reduce((sum, game) => sum + (game.net_result || 0), 0) || 0;
+      
+      // Update or insert user stats with actual game data
       const { error } = await supabase
         .from('global_leaderboard')
         .upsert({
           id: userId,
           username,
-          daily_rounds: sessionStats.sessionRounds,
-          daily_net_credits: sessionStats.sessionCredits,
-          total_rounds: overallStats.totalRoundsPlayed,
-          total_net_credits: overallStats.totalNetCredits,
+          daily_rounds: dailyRounds,
+          daily_net_credits: dailyNetCredits,
+          total_rounds: totalRounds,
+          total_net_credits: totalNetCredits,
           date: today,
         }, {
           onConflict: 'id,date'
@@ -75,6 +97,9 @@ export const GlobalLeaderboard = () => {
     const today = new Date().toISOString().split('T')[0];
     
     try {
+      // Sync achievements with database first
+      await syncWithDatabase();
+      
       // Update user stats first
       await updateUserStats();
 

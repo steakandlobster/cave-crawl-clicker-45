@@ -38,7 +38,7 @@ export default function Exploration() {
   
   const { sessionStats, addSessionRounds, addSessionCredits } = useSessionStats();
   const { overallStats, addRoundsPlayed, addNetCredits, incrementGamesPlayed } = useOverallStats();
-  const { achievements, addRoundsCleared, addGamesPlayed, addPathChoice, getNewlyUnlockedAchievements } = useAchievements();
+  const { achievements, addRoundsCleared, addGamesPlayed, addPathChoice, getNewlyUnlockedAchievements, syncWithDatabase } = useAchievements();
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
   const { dismiss } = useToast();
 
@@ -74,10 +74,13 @@ export default function Exploration() {
       return;
     }
     
+    // Sync achievements with database when component loads
+    syncWithDatabase();
+    
     // Track game start on first round only
     if (state.round === 1) {
       const previousAchievements = [...achievements];
-      stableIncrementGamesPlayed();
+      // Only track games for achievements, stats come from backend
       addGamesPlayed(1);
       
       // Check for new achievements
@@ -135,10 +138,7 @@ export default function Exploration() {
         const netCredits = totalScore - creditsSpent;
         const previousAchievements = [...achievements];
 
-        addSessionRounds(1);
-        addSessionCredits(netCredits);
-        addRoundsPlayed(1);
-        addNetCredits(netCredits);
+        // Only update achievements since stats are now handled by backend
         addRoundsCleared(1);
 
         const riskLevels = ['low', 'medium', 'high'];
@@ -187,11 +187,8 @@ export default function Exploration() {
           const netCredits = totalScore - creditsSpent;
           const previousAchievements = [...achievements];
 
-          addSessionRounds(state.maxRounds);
-          addSessionCredits(netCredits);
-          addRoundsPlayed(state.maxRounds);
-          addNetCredits(netCredits);
-          addRoundsCleared(1);
+          // Only update achievements since stats are now handled by backend
+          addRoundsCleared(state.maxRounds);
 
           const riskLevels = ['low', 'medium', 'high'];
           const riskLevel = riskLevels[optionIndex % 3];

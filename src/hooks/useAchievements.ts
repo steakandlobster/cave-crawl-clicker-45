@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PathChoiceStats {
   safe: number;
@@ -209,6 +210,52 @@ export const useAchievements = () => {
     }));
   };
 
+  // Sync achievements with actual database stats
+  const syncWithDatabase = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get actual games and rounds from database
+      const { data: completedGames } = await supabase
+        .from('game_sessions')
+        .select('passages_navigated, user_choices')
+        .eq('user_id', user.id)
+        .eq('status', 'completed');
+
+      if (completedGames) {
+        const totalGames = completedGames.length;
+        const totalRounds = completedGames.reduce((sum, game) => sum + (game.passages_navigated || 0), 0);
+        
+        // Count path choices from actual games
+        let safePaths = 0, riskyPaths = 0, dangerousPaths = 0;
+        
+        completedGames.forEach(game => {
+          const choices = game.user_choices as any[] || [];
+          choices.forEach(choice => {
+            // Map option index to path type (0=safe, 1=risky, 2=dangerous)
+            if (choice.option_selected === 0) safePaths++;
+            else if (choice.option_selected === 1) riskyPaths++;
+            else if (choice.option_selected === 2) dangerousPaths++;
+          });
+        });
+
+        setAchievementData(prev => ({
+          ...prev,
+          totalGamesPlayed: Math.max(prev.totalGamesPlayed, totalGames),
+          totalRoundsCleared: Math.max(prev.totalRoundsCleared, totalRounds),
+          pathChoices: {
+            safe: Math.max(prev.pathChoices.safe, safePaths),
+            risky: Math.max(prev.pathChoices.risky, riskyPaths),
+            dangerous: Math.max(prev.pathChoices.dangerous, dangerousPaths),
+          }
+        }));
+      }
+    } catch (error) {
+      console.warn('Failed to sync achievements with database:', error);
+    }
+  };
+
   const addPathChoice = (pathType: 'safe' | 'risky' | 'dangerous') => {
     setAchievementData(prev => ({
       ...prev,
@@ -242,5 +289,6 @@ export const useAchievements = () => {
     addPathChoice,
     addReferral,
     getNewlyUnlockedAchievements,
+    syncWithDatabase,
   };
 };
