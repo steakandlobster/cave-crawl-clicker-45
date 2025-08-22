@@ -163,11 +163,8 @@ export function AGWConnect() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
-          Connect with Abstract Global Wallet
+          Connect Wallet
         </CardTitle>
-        <CardDescription>
-          Use Abstract Global Wallet for gasless transactions and the best Web3 experience
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Primary AGW Connection Button - Following Abstract's official docs */}

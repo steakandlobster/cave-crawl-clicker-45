@@ -80,11 +80,8 @@ export default function Auth() {
               </h1>
             </div>
             <h2 className="text-2xl font-bold">
-              Connect Your Wallet
+              Welcome to Cave Explorer
             </h2>
-            <p className="text-muted-foreground">
-              Connect your Abstract wallet to start exploring caves and earning on-chain rewards
-            </p>
           </div>
 
           {/* Wallet Connection or Profile Setup */}
@@ -107,7 +104,6 @@ export default function Auth() {
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
-            <p>Connect your wallet to:</p>
             <ul className="mt-2 space-y-1">
               <li>• Play on-chain cave exploration games</li>
               <li>• Earn verifiable rewards on Abstract</li>
