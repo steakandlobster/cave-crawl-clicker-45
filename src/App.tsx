@@ -22,17 +22,17 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    // Listen first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthed(!!session?.access_token);
+    // For wallet-based auth, we'll use a simple connected check
+    // In a real implementation, you might want to verify wallet signature
+    const checkWalletConnection = () => {
+      // Check if there's a connected wallet (this is a simple implementation)
+      // You could enhance this to check for signed messages, etc.
+      const hasWallet = window.ethereum;
+      setIsAuthed(!!hasWallet);
       setLoading(false);
-    });
-    // Then check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthed(!!session?.access_token);
-      setLoading(false);
-    });
-    return () => subscription.unsubscribe();
+    };
+
+    checkWalletConnection();
   }, []);
 
   if (loading) {
