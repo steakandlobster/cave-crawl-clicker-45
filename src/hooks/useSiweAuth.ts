@@ -3,9 +3,9 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { createSiweMessage } from '@/lib/siwe';
 import { SiweAuthData } from '@/types/siwe';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const SIWE_API_BASE = 'https://aegayadckentahcljxhf.supabase.co/functions/v1';
-const LOCAL_TOKEN_KEY = 'siwe_session_token';
 
 export function useSiweAuth() {
   const { address, chainId, isConnected } = useAccount();
@@ -23,9 +23,9 @@ export function useSiweAuth() {
 
     setIsLoading(true);
     try {
-      const localToken = localStorage.getItem(LOCAL_TOKEN_KEY);
+      const { data: { session } } = await supabase.auth.getSession();
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (localToken) headers['Authorization'] = `Bearer ${localToken}`;
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
       const response = await fetch(`${SIWE_API_BASE}/siwe-user`, {
         credentials: 'include',
@@ -90,8 +90,8 @@ export function useSiweAuth() {
         message: messageString,
       });
 
-      // Verify signature
-      const verifyResponse = await fetch(`${SIWE_API_BASE}/siwe-verify`, {
+      // Verify signature and bootstrap Supabase session via OTP
+      const verifyResponse = await fetch(`${SIWE_API_BASE}/siwe-user`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -101,15 +101,23 @@ export function useSiweAuth() {
       const verifyText = await verifyResponse.text();
       let verifyJson: any = null;
       try { verifyJson = verifyText ? JSON.parse(verifyText) : null; } catch {}
-      console.log('[SIWE] /siwe-verify status:', verifyResponse.status, 'body:', verifyText);
+      console.log('[SIWE] /siwe-user (POST) status:', verifyResponse.status, 'body:', verifyText);
 
       if (!verifyResponse.ok || !verifyJson?.ok) {
         throw new Error(verifyJson?.error || `Failed to verify (status ${verifyResponse.status})`);
       }
 
-      if (verifyJson?.token) {
-        try { localStorage.setItem(LOCAL_TOKEN_KEY, verifyJson.token); } catch {}
+      // Exchange OTP for a Supabase session
+      const { email, emailOtp } = verifyJson;
+      const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
+        email,
+        token: emailOtp,
+        type: 'email',
+      });
+      if (verifyErr) {
+        throw new Error(verifyErr.message || 'Failed to create Supabase session');
       }
+
       await checkAuthStatus();
       toast.success('Successfully authenticated!');
     } catch (error: any) {

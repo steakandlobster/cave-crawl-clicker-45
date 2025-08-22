@@ -1,5 +1,6 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { SiweMessage } from 'https://esm.sh/siwe@2.1.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 function getAllowedOrigin(req: Request) {
   const origin = req.headers.get('origin');
@@ -13,7 +14,7 @@ function getAllowedOrigin(req: Request) {
 
 function getCorsHeaders(req: Request) {
   const allowedOrigin = getAllowedOrigin(req);
-  const requestedHeaders = req.headers.get('access-control-request-headers') || 'authorization, x-client-info, apikey, content-type, cookie';
+  const requestedHeaders = req.headers.get('access-control-request-headers') || 'authorization, x-client-info, apikey, content-type, cookie'
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': requestedHeaders,
@@ -23,59 +24,46 @@ function getCorsHeaders(req: Request) {
   }
 }
 
-// Secure session utilities using AES-GCM encryption (iron-session style)
-class SessionManager {
-  private static async getKey(): Promise<CryptoKey> {
-    const secret = Deno.env.get('SESSION_SECRET')
-    if (!secret) {
-      throw new Error('SESSION_SECRET not configured')
-    }
-    
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(secret),
-      { name: 'PBKDF2' },
-      false,
-      ['deriveKey']
-    )
-    
-    return await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: new TextEncoder().encode('siwe-session'),
-        iterations: 100000,
-        hash: 'SHA-256',
-      },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['encrypt', 'decrypt']
-    )
-  }
+function getCookie(req: Request, name: string): string | null {
+  const cookieHeader = req.headers.get('cookie') || ''
+  const match = cookieHeader.match(new RegExp(`${name}=([^;]+)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
 
-  static async decrypt(encryptedData: string): Promise<any> {
-    try {
-      const key = await this.getKey()
-      const decoded = atob(encryptedData)
-      const bytes = new Uint8Array(decoded.length)
-      for (let i = 0; i < decoded.length; i++) {
-        bytes[i] = decoded.charCodeAt(i)
+// Normalize signatures from providers that return ABI-encoded bytes or 6492-wrapped signatures
+function normalizeSignature(sig: string): string {
+  if (!sig) return sig;
+  let hex = sig.startsWith('0x') ? sig.slice(2) : sig;
+
+  // Raw 65-byte signature is 130 hex chars
+  if (hex.length === 130) return '0x' + hex;
+
+  const MAGIC_6492 = '6492649264926492649264926492649264926492649264926492649264926492';
+
+  try {
+    if (hex.length > 130) {
+      // Try ABI-encoded dynamic bytes: [offset(32)][len(32)][data(len)][padding]
+      const lenWord = hex.slice(64, 128);
+      const length = parseInt(lenWord, 16);
+      if (length === 65 || length === 64) {
+        const dataStart = 128;
+        const dataEnd = dataStart + length * 2;
+        const sigData = hex.slice(dataStart, dataEnd);
+        if (sigData.length === 130 || sigData.length === 128) {
+          if (sigData.length === 128) return '0x' + sigData + '1b';
+          return '0x' + sigData;
+        }
       }
-      
-      const iv = bytes.slice(0, 12)
-      const ciphertext = bytes.slice(12)
-      
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        key,
-        ciphertext
-      )
-      
-      return JSON.parse(new TextDecoder().decode(decrypted))
-    } catch {
-      throw new Error('Failed to decrypt session')
+      // Fallback: if 6492 magic is present, take 65 bytes before it
+      const markerIndex = hex.indexOf(MAGIC_6492);
+      if (markerIndex > 130) {
+        const sigData = hex.slice(markerIndex - 130, markerIndex);
+        if (sigData.length === 130) return '0x' + sigData;
+      }
     }
-  }
+  } catch (_) {}
+
+  return sig;
 }
 
 serve(async (req) => {
@@ -85,93 +73,139 @@ serve(async (req) => {
   }
 
   try {
-    if (req.method !== 'GET') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { 
-          status: 405, 
-          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Attempt to read session from Authorization bearer or cookie
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || ''
-    const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i)
-    let encryptedSession: string | null = bearerMatch?.[1] || null
-
-    if (!encryptedSession) {
-      const cookies = req.headers.get('cookie') || ''
-      const sessionMatch = cookies.match(/siwe-session=([^;]+)/)
-      if (sessionMatch) {
-        encryptedSession = decodeURIComponent(sessionMatch[1])
-      }
-    }
-
-    if (!encryptedSession) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: 'No session found' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    try {
-      // Decrypt the session data
-      const sessionData = await SessionManager.decrypt(encryptedSession)
-      
-      // Check if session is expired
-      if (sessionData.expirationTime && new Date() > new Date(sessionData.expirationTime)) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            error: 'Session expired' 
-          }),
-          { 
-            status: 401, 
-            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
+    if (req.method === 'GET') {
+      // Protected: requires a valid Supabase JWT in Authorization header
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        {
+          global: {
+            headers: {
+              Authorization: req.headers.get('Authorization') || ''
+            }
           }
+        }
+      )
+
+      const bearer = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || undefined
+      const { data, error } = await supabase.auth.getUser(bearer)
+
+      if (error || !data?.user) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Unauthorized' }),
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         )
       }
 
       return new Response(
-        JSON.stringify({ 
-          ok: true, 
-          user: sessionData 
-        }),
-        { 
-          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
-        }
-      )
-    } catch (error) {
-      console.error('Session decryption error:', error)
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: 'Invalid or corrupted session data' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ ok: true, user: data.user }),
+        { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       )
     }
-  } catch (error) {
-    console.error('User auth check error:', error)
-    return new Response(
-      JSON.stringify({ 
-        ok: false, 
-        error: 'Failed to check authentication status' 
-      }),
-      { 
-        status: 500, 
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
+
+    if (req.method === 'POST') {
+      // Verify SIWE and bootstrap a Supabase session via magic link OTP
+      const { message, signature } = await req.json()
+      if (!message || !signature) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Message and signature are required' }),
+          { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
       }
+
+      const normalizedSignature = normalizeSignature(signature)
+
+      const siweMessage = new SiweMessage(message)
+
+      // Validate nonce from HttpOnly cookie to prevent replay attacks
+      const serverNonce = getCookie(req, 'siwe-nonce')
+      if (!serverNonce || serverNonce !== (siweMessage as any).nonce) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Invalid nonce' }),
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const result = await siweMessage.verify({ signature: normalizedSignature })
+      if (!result.success) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Invalid signature' }),
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const admin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      )
+
+      const email = `${siweMessage.address.toLowerCase()}@siwe.eth`
+
+      // Ensure user exists
+      let userId: string | null = null
+      const { data: found, error: findErr } = await admin.auth.admin.getUserByEmail(email)
+      if (findErr) {
+        console.error('getUserByEmail error:', findErr)
+      }
+
+      if (!found?.user) {
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: {
+            wallet_address: siweMessage.address,
+            siwe: true,
+            chainId: siweMessage.chainId,
+          },
+        })
+        if (createErr) {
+          console.error('createUser error:', createErr)
+          return new Response(
+            JSON.stringify({ ok: false, error: 'Failed to create user' }),
+            { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+          )
+        }
+        userId = created.user.id
+      } else {
+        userId = found.user.id
+      }
+
+      // Generate a magic-link OTP and let the client exchange it for a session
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+      })
+      if (linkErr) {
+        console.error('generateLink error:', linkErr)
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Failed to generate login link' }),
+          { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const emailOtp = (linkData as any)?.properties?.email_otp || (linkData as any)?.email_otp
+      if (!emailOtp) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'OTP not available' }),
+          { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({ ok: true, email, emailOtp, userId }),
+        { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Method not allowed' }),
+      { status: 405, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('siwe-user error:', error)
+    return new Response(
+      JSON.stringify({ ok: false, error: 'Internal server error' }),
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     )
   }
 })
