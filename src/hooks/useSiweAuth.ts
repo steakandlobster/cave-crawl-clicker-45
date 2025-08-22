@@ -136,7 +136,7 @@ export function useSiweAuth() {
         credentials: 'include',
       });
       const text = await res.text();
-      try { localStorage.removeItem(LOCAL_TOKEN_KEY); } catch {}
+      await supabase.auth.signOut();
       setAuthData(null);
       toast.success('Signed out successfully');
     } catch (error) {
@@ -150,7 +150,7 @@ export function useSiweAuth() {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
-  const isAuthenticated = authData?.ok && (authData as any)?.user?.isAuthenticated;
+  const isAuthenticated = Boolean((authData as any)?.ok && ((authData as any)?.user?.id || (authData as any)?.user?.isAuthenticated));
 
   return {
     authData,

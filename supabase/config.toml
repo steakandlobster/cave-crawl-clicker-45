@@ -11,7 +11,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.siwe-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.siwe-nonce]
 verify_jwt = false
