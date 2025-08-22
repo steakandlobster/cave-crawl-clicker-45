@@ -5,3 +5,16 @@ verify_jwt = true
 
 [functions.play-round]
 verify_jwt = true
+
+# Public SIWE endpoints (no JWT required)
+[functions.siwe-verify]
+verify_jwt = false
+
+[functions.siwe-user]
+verify_jwt = false
+
+[functions.siwe-nonce]
+verify_jwt = false
+
+[functions.siwe-logout]
+verify_jwt = false
