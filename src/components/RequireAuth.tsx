@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAccount } from "wagmi";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -10,6 +11,24 @@ interface RequireAuthProps {
 export function RequireAuth({ children }: RequireAuthProps) {
   const { isConnected } = useAccount();
   const { isAuthenticated, isLoading } = useSiweAuth();
+
+  // Clear any conflicting Supabase sessions since we're using SIWE
+  useEffect(() => {
+    const clearConflictingSessions = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && !isAuthenticated) {
+          // Only clear if SIWE is not authenticated to avoid conflicts
+          await supabase.auth.signOut();
+          console.log("Cleared conflicting Supabase session for SIWE auth");
+        }
+      } catch (error) {
+        console.log("Session cleanup handled:", error);
+      }
+    };
+    
+    clearConflictingSessions();
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
