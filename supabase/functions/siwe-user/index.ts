@@ -1,10 +1,20 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
+function getAllowedOrigin(req: Request) {
+  const origin = req.headers.get('origin');
+  if (origin) return origin;
+  const referer = req.headers.get('referer');
+  try {
+    if (referer) return new URL(referer).origin;
+  } catch {}
+  return 'https://preview--cave-crawl-clicker-45.lovable.app';
+}
+
 function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('origin') ?? '*'
+  const allowedOrigin = getAllowedOrigin(req);
   return {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
