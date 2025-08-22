@@ -96,7 +96,9 @@ export type Database = {
       game_sessions: {
         Row: {
           amount_wagered: number
+          blockchain_game_id: string | null
           completed_at: string | null
+          contract_address: string | null
           created_at: string
           final_result: string | null
           game_hash: string
@@ -104,15 +106,20 @@ export type Database = {
           net_result: number | null
           passages_navigated: number | null
           pre_generated_results: Json
+          server_seed: string | null
           session_id: string | null
           status: string
+          transaction_hash: string | null
           updated_at: string
           user_choices: Json | null
           user_id: string
+          verification_hash: string | null
         }
         Insert: {
           amount_wagered: number
+          blockchain_game_id?: string | null
           completed_at?: string | null
+          contract_address?: string | null
           created_at?: string
           final_result?: string | null
           game_hash: string
@@ -120,15 +127,20 @@ export type Database = {
           net_result?: number | null
           passages_navigated?: number | null
           pre_generated_results: Json
+          server_seed?: string | null
           session_id?: string | null
           status?: string
+          transaction_hash?: string | null
           updated_at?: string
           user_choices?: Json | null
           user_id: string
+          verification_hash?: string | null
         }
         Update: {
           amount_wagered?: number
+          blockchain_game_id?: string | null
           completed_at?: string | null
+          contract_address?: string | null
           created_at?: string
           final_result?: string | null
           game_hash?: string
@@ -136,11 +148,14 @@ export type Database = {
           net_result?: number | null
           passages_navigated?: number | null
           pre_generated_results?: Json
+          server_seed?: string | null
           session_id?: string | null
           status?: string
+          transaction_hash?: string | null
           updated_at?: string
           user_choices?: Json | null
           user_id?: string
+          verification_hash?: string | null
         }
         Relationships: [
           {
@@ -196,6 +211,7 @@ export type Database = {
           referred_by: string | null
           updated_at: string
           username: string
+          wallet_address: string | null
         }
         Insert: {
           created_at?: string
@@ -204,6 +220,7 @@ export type Database = {
           referred_by?: string | null
           updated_at?: string
           username: string
+          wallet_address?: string | null
         }
         Update: {
           created_at?: string
@@ -212,6 +229,7 @@ export type Database = {
           referred_by?: string | null
           updated_at?: string
           username?: string
+          wallet_address?: string | null
         }
         Relationships: [
           {
