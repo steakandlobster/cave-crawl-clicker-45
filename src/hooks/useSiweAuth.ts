@@ -28,16 +28,21 @@ export function useSiweAuth() {
           'Content-Type': 'application/json',
         },
       });
-      
-      if (response.ok) {
-        const data: SiweAuthData = await response.json();
-        setAuthData(data);
+
+      const text = await response.text();
+      let parsed: SiweAuthData | null = null;
+      try { parsed = text ? JSON.parse(text) : null; } catch {}
+
+      console.log('[SIWE] /siwe-user status:', response.status, 'body:', text);
+
+      if (response.ok && parsed) {
+        setAuthData(parsed);
       } else {
-        setAuthData({ ok: false });
+        setAuthData({ ok: false, error: parsed?.error || `status ${response.status}` });
       }
     } catch (error) {
-      console.error('Auth check error:', error);
-      setAuthData({ ok: false });
+      console.error('[SIWE] Auth check error:', error);
+      setAuthData({ ok: false, error: (error as any)?.message || 'unknown error' });
     } finally {
       setIsLoading(false);
     }
@@ -53,12 +58,16 @@ export function useSiweAuth() {
       const nonceResponse = await fetch(`${SIWE_API_BASE}/siwe-nonce`, {
         credentials: 'include',
       });
-      
-      if (!nonceResponse.ok) {
-        throw new Error('Failed to get nonce');
+      const nonceText = await nonceResponse.text();
+      let nonceJson: any = null;
+      try { nonceJson = nonceText ? JSON.parse(nonceText) : null; } catch {}
+      console.log('[SIWE] /siwe-nonce status:', nonceResponse.status, 'body:', nonceText);
+
+      if (!nonceResponse.ok || !nonceJson?.nonce) {
+        throw new Error(`Failed to get nonce (status ${nonceResponse.status})`);
       }
-      
-      const { nonce } = await nonceResponse.json();
+
+      const { nonce } = nonceJson;
 
       // Create SIWE message
       const message = createSiweMessage(address, chainId, nonce);
@@ -74,29 +83,24 @@ export function useSiweAuth() {
       const verifyResponse = await fetch(`${SIWE_API_BASE}/siwe-verify`, {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: messageString,
-          signature,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageString, signature }),
       });
 
-      if (!verifyResponse.ok) {
-        throw new Error('Failed to verify signature');
+      const verifyText = await verifyResponse.text();
+      let verifyJson: any = null;
+      try { verifyJson = verifyText ? JSON.parse(verifyText) : null; } catch {}
+      console.log('[SIWE] /siwe-verify status:', verifyResponse.status, 'body:', verifyText);
+
+      if (!verifyResponse.ok || !verifyJson?.ok) {
+        throw new Error(verifyJson?.error || `Failed to verify (status ${verifyResponse.status})`);
       }
 
-      const verifyData = await verifyResponse.json();
-      if (verifyData.ok) {
-        await checkAuthStatus();
-        toast.success('Successfully authenticated!');
-      } else {
-        throw new Error(verifyData.error || 'Authentication failed');
-      }
+      await checkAuthStatus();
+      toast.success('Successfully authenticated!');
     } catch (error: any) {
-      console.error('Sign in error:', error);
-      toast.error(error.message || 'Failed to sign in');
+      console.error('[SIWE] Sign in error:', error);
+      toast.error(error?.message || 'Failed to sign in');
     } finally {
       setIsAuthenticating(false);
     }
@@ -105,15 +109,17 @@ export function useSiweAuth() {
   // Sign out
   const signOut = useCallback(async () => {
     try {
-      await fetch(`${SIWE_API_BASE}/siwe-logout`, {
+      const res = await fetch(`${SIWE_API_BASE}/siwe-logout`, {
         method: 'POST',
         credentials: 'include',
       });
-      
+      const text = await res.text();
+      console.log('[SIWE] /siwe-logout status:', res.status, 'body:', text);
+
       setAuthData(null);
       toast.success('Signed out successfully');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('[SIWE] Sign out error:', error);
       toast.error('Failed to sign out');
     }
   }, []);
@@ -123,7 +129,7 @@ export function useSiweAuth() {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
-  const isAuthenticated = authData?.ok && authData?.user?.isAuthenticated;
+  const isAuthenticated = authData?.ok && (authData as any)?.user?.isAuthenticated;
 
   return {
     authData,

@@ -1,16 +1,20 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? '*'
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
+  }
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(req) })
   }
 
   try {
@@ -19,13 +23,13 @@ serve(async (req) => {
         JSON.stringify({ error: 'Method not allowed' }),
         { 
           status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
 
-    // Clear session cookie
-    const clearCookie = 'siwe-session=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/'
+    // Clear session cookie (must match cookie attributes used when setting it)
+    const clearCookie = 'siwe-session=; HttpOnly; Secure; SameSite=None; Max-Age=0; Path=/'
 
     return new Response(
       JSON.stringify({ 
@@ -34,7 +38,7 @@ serve(async (req) => {
       }),
       { 
         headers: { 
-          ...corsHeaders, 
+          ...getCorsHeaders(req), 
           'Content-Type': 'application/json',
           'Set-Cookie': clearCookie
         } 
@@ -49,7 +53,7 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
       }
     )
   }
