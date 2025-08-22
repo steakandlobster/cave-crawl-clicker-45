@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { WalletConnect } from './WalletConnect'
+import { AGWConnect } from './AGWConnect'
 import { GameContract } from './GameContract'
 import { NetworkSwitcher } from './NetworkSwitcher'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -65,7 +65,7 @@ export function WalletIntegration() {
 
         <TabsContent value="wallet" className="mt-6">
           <div className="flex justify-center">
-            <WalletConnect />
+            <AGWConnect />
           </div>
         </TabsContent>
 

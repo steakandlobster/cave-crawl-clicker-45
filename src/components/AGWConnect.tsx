@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
+import { useAccount, useBalance, useDisconnect, useConnect } from 'wagmi'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Wallet, LogOut, Copy, Check, Coins } from 'lucide-react'
+import { Wallet, LogOut, Copy, Check, Coins, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function WalletConnect() {
+export function AGWConnect() {
   const { address, isConnected, chain } = useAccount()
   const { connect, connectors, isPending } = useConnect()
   const { disconnect } = useDisconnect()
@@ -49,10 +49,10 @@ export function WalletConnect() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
-            Wallet Connected
+            Abstract Wallet Connected
           </CardTitle>
           <CardDescription>
-            Your Abstract wallet is connected and ready
+            Your wallet is connected and ready for Abstract blockchain
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -130,13 +130,25 @@ export function WalletConnect() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5" />
-          Connect Wallet
+          Connect to Abstract
         </CardTitle>
         <CardDescription>
-          Connect your wallet to start playing Cave Explorer on Abstract
+          Connect using Abstract Global Wallet for the best experience with gasless transactions
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Primary recommendation for Abstract wallets */}
+        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Recommended</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Use MetaMask or compatible wallets connected to Abstract network for the best experience with lower fees.
+          </p>
+        </div>
+
+        {/* Wallet connectors */}
         {connectors.map((connector) => (
           <Button
             key={connector.uid}

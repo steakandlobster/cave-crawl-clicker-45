@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAccount } from 'wagmi';
 import { Pickaxe } from "lucide-react";
-import { WalletConnect } from "@/components/WalletConnect";
+import { AGWConnect } from "@/components/AGWConnect";
 import { SignupWithReferral } from "@/components/SignupWithReferral";
 import { supabase } from '@/integrations/supabase/client';
 import caveBackground from "@/assets/cave-background.jpg";
@@ -90,7 +90,7 @@ export default function Auth() {
           {/* Wallet Connection or Profile Setup */}
           <div className="flex justify-center">
             {!isConnected ? (
-              <WalletConnect />
+              <AGWConnect />
             ) : isChecking ? (
               <Card className="w-full max-w-md">
                 <div className="p-6 text-center">
