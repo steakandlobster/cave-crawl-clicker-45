@@ -29,6 +29,42 @@ interface VerifyRequest {
   signature: string
 }
 
+// Normalize signatures from providers that return ABI-encoded bytes or 6492-wrapped signatures
+function normalizeSignature(sig: string): string {
+  if (!sig) return sig;
+  let hex = sig.startsWith('0x') ? sig.slice(2) : sig;
+
+  // Raw 65-byte signature is 130 hex chars
+  if (hex.length === 130) return '0x' + hex;
+
+  const MAGIC_6492 = '6492649264926492649264926492649264926492649264926492649264926492';
+
+  try {
+    if (hex.length > 130) {
+      // Try ABI-encoded dynamic bytes: [offset(32)][len(32)][data(len)][padding]
+      const lenWord = hex.slice(64, 128);
+      const length = parseInt(lenWord, 16);
+      if (length === 65 || length === 64) {
+        const dataStart = 128;
+        const dataEnd = dataStart + length * 2;
+        const sigData = hex.slice(dataStart, dataEnd);
+        if (sigData.length === 130 || sigData.length === 128) {
+          if (sigData.length === 128) return '0x' + sigData + '1b';
+          return '0x' + sigData;
+        }
+      }
+      // Fallback: if 6492 magic is present, take 65 bytes before it
+      const markerIndex = hex.indexOf(MAGIC_6492);
+      if (markerIndex > 130) {
+        const sigData = hex.slice(markerIndex - 130, markerIndex);
+        if (sigData.length === 130) return '0x' + sigData;
+      }
+    }
+  } catch (_) {}
+
+  return sig;
+}
+
 // Secure session utilities using AES-GCM encryption (iron-session style)
 class SessionManager {
   private static async getKey(): Promise<CryptoKey> {
@@ -108,9 +144,11 @@ serve(async (req) => {
       )
     }
 
+    const normalizedSignature = normalizeSignature(signature)
+
     // Parse and verify the SIWE message
     const siweMessage = new SiweMessage(message)
-    const result = await siweMessage.verify({ signature })
+    const result = await siweMessage.verify({ signature: normalizedSignature })
 
     if (result.success) {
       // Create secure session data
