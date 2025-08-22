@@ -9,6 +9,7 @@ import { GameHeader } from "@/components/GameHeader";
 import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { StatsSidebar } from "@/components/StatsSidebar";
 import { SocialSharing } from "@/components/SocialSharing";
+import { Link } from "react-router-dom";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
 import { AchievementNotification } from "@/components/AchievementNotification";
