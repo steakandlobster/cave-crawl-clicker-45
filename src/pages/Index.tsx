@@ -6,59 +6,28 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GameHeader } from "@/components/GameHeader";
-import { GlobalLeaderboard } from "@/components/GlobalLeaderboard";
 import { StatsSidebar } from "@/components/StatsSidebar";
 import { SocialSharing } from "@/components/SocialSharing";
-import { Link } from "react-router-dom";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
 import { AchievementNotification } from "@/components/AchievementNotification";
-import { Pickaxe, Coins, Map, Users } from "lucide-react";
+import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useAccount } from "wagmi";
+import { Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { address } = useAccount();
+  const { isAuthenticated } = useSiweAuth();
   const [selectedAmount, setSelectedAmount] = useState<number | null>(0.001);
   const [customAmount, setCustomAmount] = useState("");
-  const [showStats, setShowStats] = useState(false);
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
-  const { sessionStats, resetSession, sessionId, updateSessionStatsFromGame } = useSessionStats();
+  const { sessionStats, sessionId } = useSessionStats();
   const { overallStats } = useOverallStats();
   const { achievements, updateDailyStreak } = useAchievements();
-
-  // Check authentication status on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("Auth check error:", error);
-          setIsAuthenticated(false);
-        } else {
-          setIsAuthenticated(!!session?.access_token);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session?.access_token);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Update daily streak when visiting the home page
   useEffect(() => {
@@ -70,11 +39,10 @@ const Index = () => {
   const presetAmounts = [0.001, 0.01, 0.1];
 
   const handleStartGame = async () => {
-    // Check authentication first
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !address) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to start a provably fair game.",
+        title: "Authentication required",
+        description: "Please complete SIWE authentication to start playing.",
         variant: "destructive",
       });
       navigate("/auth");
@@ -101,38 +69,17 @@ const Index = () => {
       return;
     }
 
-    // Don't reset session stats - they should persist across games
     try {
-      // Check authentication more thoroughly
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        toast({
-          title: "Authentication Error", 
-          description: "Please sign in again.",
-          variant: "destructive",
-        });
-        navigate("/auth");
-        return;
-      }
-
-      if (!sessionData.session?.access_token) {
-        toast({
-          title: "Sign in required",
-          description: "Please sign in to start a provably fair game.",
-        });
-        navigate("/auth");
-        return;
-      }
-
-      console.log("Starting game with user:", sessionData.session.user.id);
+      // For SIWE auth, we'll use the wallet address as the user identifier
+      console.log("Starting game with wallet address:", address);
 
       const { data, error } = await supabase.functions.invoke("start-game", {
         body: {
           amount_wagered: credits,
           max_rounds: 6,
           client_seed: String(Date.now()),
-          session_id: sessionId, // Pass the session ID from useSessionStats
+          session_id: sessionId,
+          wallet_address: address, // Include wallet address for SIWE auth
         },
       });
 
@@ -186,18 +133,6 @@ const Index = () => {
       />
       
       <div className="relative z-10">
-        <GameHeader />
-        
-        {/* Auth Link */}
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/auth')}
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            Sign In
-          </Button>
-        </div>
         <GameHeader />
         
         <div className="container mx-auto px-4 pt-24 pb-16 relative z-10 ml-96">
@@ -265,31 +200,19 @@ const Index = () => {
                   </div>
 
                   <div className="pt-4 border-t border-border">
-                    {!isAuthenticated ? (
-                      <Button
-                        variant="cave"
-                        size="xl"
-                        onClick={() => navigate("/auth")}
-                        className="w-full"
-                      >
-                        <Map className="w-5 h-5 mr-2" />
-                        Sign In to Start Exploring
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="treasure"
-                        size="xl"
-                        onClick={handleStartGame}
-                        disabled={!getAmountForButton() || isLoading}
-                        className="w-full"
-                      >
-                        <Map className="w-5 h-5 mr-2" />
-                        Start Cave Exploration
-                        {getAmountForButton() > 0 && (
-                          <span className="ml-2">({getAmountForButton()} ETH)</span>
-                        )}
-                      </Button>
-                    )}
+                    <Button
+                      variant="treasure"
+                      size="xl"
+                      onClick={handleStartGame}
+                      disabled={!getAmountForButton() || !isAuthenticated}
+                      className="w-full"
+                    >
+                      <Map className="w-5 h-5 mr-2" />
+                      Start Cave Exploration
+                      {getAmountForButton() > 0 && (
+                        <span className="ml-2">({getAmountForButton()} ETH)</span>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </Card>

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAccount } from 'wagmi';
 import { Pickaxe } from "lucide-react";
-import { AGWConnect } from "@/components/AGWConnect";
+import { SiweButton } from "@/components/SiweButton";
 import { SignupWithReferral } from "@/components/SignupWithReferral";
+import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useAccount } from 'wagmi';
 import { supabase } from '@/integrations/supabase/client';
 import caveBackground from "@/assets/cave-background.jpg";
 
 export default function Auth() {
   const { isConnected, address } = useAccount();
+  const { isAuthenticated } = useSiweAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
@@ -24,9 +26,10 @@ export default function Auth() {
     }
   }, [searchParams]);
 
+  // Check if user has completed profile setup after SIWE authentication
   useEffect(() => {
     const checkProfile = async () => {
-      if (!isConnected || !address) return;
+      if (!isConnected || !address || !isAuthenticated) return;
       
       setIsChecking(true);
       try {
@@ -52,7 +55,7 @@ export default function Auth() {
     };
 
     checkProfile();
-  }, [isConnected, address, navigate]);
+  }, [isConnected, address, isAuthenticated, navigate]);
 
   const handleSignupComplete = () => {
     navigate('/');
@@ -84,10 +87,10 @@ export default function Auth() {
             </h2>
           </div>
 
-          {/* Wallet Connection or Profile Setup */}
+          {/* SIWE Authentication and Profile Setup */}
           <div className="flex justify-center">
-            {!isConnected ? (
-              <AGWConnect />
+            {!isConnected || !isAuthenticated ? (
+              <SiweButton />
             ) : isChecking ? (
               <Card className="w-full max-w-md">
                 <div className="p-6 text-center">
