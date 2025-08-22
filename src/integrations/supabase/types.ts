@@ -208,6 +208,7 @@ export type Database = {
           created_at: string
           id: string
           last_login_at: string
+          referral_code: string | null
           referred_by: string | null
           updated_at: string
           username: string
@@ -217,6 +218,7 @@ export type Database = {
           created_at?: string
           id: string
           last_login_at?: string
+          referral_code?: string | null
           referred_by?: string | null
           updated_at?: string
           username: string
@@ -226,6 +228,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_login_at?: string
+          referral_code?: string | null
           referred_by?: string | null
           updated_at?: string
           username?: string

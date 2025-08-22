@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Users, Copy, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAchievements } from "@/hooks/useAchievements";
+import { supabase } from "@/integrations/supabase/client";
+import { useAccount } from "wagmi";
 
 interface ReferralCodeDialogProps {
   className?: string;
@@ -13,10 +15,35 @@ interface ReferralCodeDialogProps {
 
 export const ReferralCodeDialog = ({ className }: ReferralCodeDialogProps) => {
   const [copied, setCopied] = useState(false);
+  const [referralCode, setReferralCode] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
   const { addReferral } = useAchievements();
+  const { address } = useAccount();
+
+  useEffect(() => {
+    const fetchReferralCode = async () => {
+      if (!address) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('referral_code')
+          .eq('wallet_address', address)
+          .single();
+
+        if (profile && !error) {
+          setReferralCode(profile.referral_code || '');
+        }
+      } catch (error) {
+        console.error('Error fetching referral code:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReferralCode();
+  }, [address]);
   
-  // Generate a simple referral code based on user's session
-  const referralCode = `CAVE${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const referralUrl = `${window.location.origin}?ref=${referralCode}`;
 
   const handleCopyCode = async () => {
@@ -81,42 +108,60 @@ export const ReferralCodeDialog = ({ className }: ReferralCodeDialogProps) => {
         <div className="space-y-4 mt-4">
           <div>
             <Label htmlFor="referral-code">Your Referral Code</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                id="referral-code"
-                value={referralCode}
-                readOnly
-                className="font-mono"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyCode}
-                className="shrink-0"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
+            {isLoading ? (
+              <div className="flex gap-2 mt-1">
+                <div className="flex-1 h-10 bg-muted animate-pulse rounded-md"></div>
+                <div className="w-20 h-10 bg-muted animate-pulse rounded-md"></div>
+              </div>
+            ) : (
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="referral-code"
+                  value={referralCode}
+                  readOnly
+                  className="font-mono"
+                  disabled={!referralCode}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyCode}
+                  className="shrink-0"
+                  disabled={!referralCode}
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div>
             <Label htmlFor="referral-link">Share Link</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                id="referral-link"
-                value={referralUrl}
-                readOnly
-                className="text-xs"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-                className="shrink-0"
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-            </div>
+            {isLoading ? (
+              <div className="flex gap-2 mt-1">
+                <div className="flex-1 h-10 bg-muted animate-pulse rounded-md"></div>
+                <div className="w-20 h-10 bg-muted animate-pulse rounded-md"></div>
+              </div>
+            ) : (
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="referral-link"
+                  value={referralUrl}
+                  readOnly
+                  className="text-xs"
+                  disabled={!referralCode}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="shrink-0"
+                  disabled={!referralCode}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="bg-secondary/50 p-3 rounded-lg">

@@ -10,12 +10,13 @@ import { Users, Gift } from 'lucide-react';
 
 interface SignupWithReferralProps {
   onComplete: () => void;
+  initialReferralCode?: string;
 }
 
-export function SignupWithReferral({ onComplete }: SignupWithReferralProps) {
+export function SignupWithReferral({ onComplete, initialReferralCode = '' }: SignupWithReferralProps) {
   const { address } = useAccount();
   const [username, setUsername] = useState('');
-  const [referralCode, setReferralCode] = useState('');
+  const [referralCode, setReferralCode] = useState(initialReferralCode);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,11 +47,12 @@ export function SignupWithReferral({ onComplete }: SignupWithReferralProps) {
       // Generate a unique referral code for this user
       const userReferralCode = `CAVE${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-      // Create user profile
+      // Create user profile with proper ID generation
+      const profileId = crypto.randomUUID();
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: crypto.randomUUID(), // Generate a UUID for the profile
+          id: profileId,
           username: username || `Explorer${address.slice(-4)}`,
           wallet_address: address,
           referral_code: userReferralCode,

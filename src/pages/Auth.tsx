@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAccount } from 'wagmi';
 import { Pickaxe } from "lucide-react";
 import { WalletConnect } from "@/components/WalletConnect";
@@ -11,8 +11,18 @@ import caveBackground from "@/assets/cave-background.jpg";
 export default function Auth() {
   const { isConnected, address } = useAccount();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [referralCodeFromUrl, setReferralCodeFromUrl] = useState<string>('');
+
+  useEffect(() => {
+    // Get referral code from URL
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCodeFromUrl(refCode);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -89,7 +99,10 @@ export default function Auth() {
                 </div>
               </Card>
             ) : hasProfile === false ? (
-              <SignupWithReferral onComplete={handleSignupComplete} />
+              <SignupWithReferral 
+                onComplete={handleSignupComplete} 
+                initialReferralCode={referralCodeFromUrl}
+              />
             ) : null}
           </div>
 
