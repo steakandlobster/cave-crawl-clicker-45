@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { SiweMessage } from 'https://esm.sh/siwe@2.1.4'
 import { encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
-import { JsonRpcProvider } from 'https://esm.sh/ethers@6.15.0'
+
 
 function getAllowedOrigin(req: Request) {
   const origin = req.headers.get('origin');
@@ -169,11 +169,8 @@ serve(async (req) => {
       )
     }
 
-    const chainId = Number(siweMessage.chainId)
-    const rpcUrl = RPC_MAP[chainId]
-    const provider = rpcUrl ? new JsonRpcProvider(rpcUrl) : undefined
-
-    const result = await siweMessage.verify({ signature: normalizedSignature, provider })
+    // Provider not required for EOA signatures
+    const result = await siweMessage.verify({ signature: normalizedSignature })
 
     if (result.success) {
       // Create secure session data
