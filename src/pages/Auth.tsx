@@ -1,21 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAccount } from 'wagmi';
 import { Pickaxe } from "lucide-react";
 import { WalletConnect } from "@/components/WalletConnect";
+import { SignupWithReferral } from "@/components/SignupWithReferral";
+import { supabase } from '@/integrations/supabase/client';
 import caveBackground from "@/assets/cave-background.jpg";
 
 export default function Auth() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const navigate = useNavigate();
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
-    // Redirect to home if wallet is connected
-    if (isConnected) {
-      navigate('/');
-    }
-  }, [isConnected, navigate]);
+    const checkProfile = async () => {
+      if (!isConnected || !address) return;
+      
+      setIsChecking(true);
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('wallet_address', address)
+          .single();
+
+        if (profile && !error) {
+          // Profile exists, redirect to home
+          navigate('/');
+        } else {
+          // No profile found, show signup form
+          setHasProfile(false);
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+        setHasProfile(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkProfile();
+  }, [isConnected, address, navigate]);
+
+  const handleSignupComplete = () => {
+    navigate('/');
+  };
 
 
   return (
@@ -46,9 +77,20 @@ export default function Auth() {
             </p>
           </div>
 
-          {/* Wallet Connection */}
+          {/* Wallet Connection or Profile Setup */}
           <div className="flex justify-center">
-            <WalletConnect />
+            {!isConnected ? (
+              <WalletConnect />
+            ) : isChecking ? (
+              <Card className="w-full max-w-md">
+                <div className="p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p>Checking your profile...</p>
+                </div>
+              </Card>
+            ) : hasProfile === false ? (
+              <SignupWithReferral onComplete={handleSignupComplete} />
+            ) : null}
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
