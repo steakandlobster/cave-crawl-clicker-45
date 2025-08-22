@@ -1,7 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { SiweMessage } from 'https://esm.sh/siwe@2.1.4'
-import { encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 function getAllowedOrigin(req: Request) {
   const origin = req.headers.get('origin');
