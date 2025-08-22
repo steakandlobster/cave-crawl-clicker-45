@@ -28,6 +28,17 @@ export default function Auth() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    console.log('[Auth] state', {
+      isConnected,
+      address,
+      isAuthenticated,
+      hasProfile,
+      isChecking,
+      referralCodeFromUrl,
+    });
+  }, [isConnected, address, isAuthenticated, hasProfile, isChecking, referralCodeFromUrl]);
+
   // Check if user has completed profile setup after SIWE authentication
   useEffect(() => {
     const checkProfile = async () => {
@@ -76,6 +87,14 @@ export default function Auth() {
       </div>
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+        {/* Debug panel */}
+        <div className="fixed bottom-2 left-2 z-50 text-[10px] px-2 py-1 rounded bg-muted/80 border border-border">
+          <div>isConnected: {String(isConnected)}</div>
+          <div>isAuthenticated: {String(isAuthenticated)}</div>
+          <div>address: {address || '-'}</div>
+          <div>hasProfile: {String(hasProfile)}</div>
+          <div>isChecking: {String(isChecking)}</div>
+        </div>
         <div className="w-full max-w-md space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
