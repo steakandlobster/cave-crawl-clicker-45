@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useAccount, useBalance, useDisconnect, useConnect } from 'wagmi'
+import { useAccount, useBalance, useDisconnect } from 'wagmi'
+import { useLoginWithAbstract } from '@abstract-foundation/agw-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +10,7 @@ import { toast } from 'sonner'
 
 export function AGWConnect() {
   const { address, isConnected, chain, status } = useAccount()
-  const { connect, connectors, isPending } = useConnect()
+  const { login, logout } = useLoginWithAbstract()
   const { disconnect } = useDisconnect()
   const [copied, setCopied] = useState(false)
 
@@ -21,7 +22,7 @@ export function AGWConnect() {
     }
   })
 
-  const isConnecting = status === 'connecting' || status === 'reconnecting' || isPending
+  const isConnecting = status === 'connecting' || status === 'reconnecting'
 
   const copyAddress = () => {
     if (address) {
@@ -73,10 +74,10 @@ export function AGWConnect() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
-            Abstract Wallet Connected
+            Abstract Global Wallet Connected
           </CardTitle>
           <CardDescription>
-            Your Abstract Global Wallet is connected and ready
+            Your Abstract Global Wallet is connected with gasless transactions enabled
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -142,7 +143,10 @@ export function AGWConnect() {
           </div>
 
           <Button
-            onClick={() => disconnect()}
+            onClick={() => {
+              logout()
+              disconnect()
+            }}
             variant="outline"
             className="w-full"
           >
@@ -159,74 +163,83 @@ export function AGWConnect() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
-          Connect to Abstract
+          Connect with Abstract Global Wallet
         </CardTitle>
         <CardDescription>
-          Connect using Abstract Global Wallet for gasless transactions and seamless Web3 experience
+          Use Abstract Global Wallet for gasless transactions and the best Web3 experience
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Primary Abstract Wallet Connection */}
-        <div className="space-y-3">
-          {connectors.map((connector) => {
-            // Prioritize MetaMask for Abstract connection
-            if (connector.name === 'MetaMask') {
-              return (
-                <Button
-                  key={connector.uid}
-                  onClick={() => connect({ connector })}
-                  disabled={isConnecting}
-                  variant="default"
-                  className="w-full justify-center h-12"
-                >
-                  <div className="flex items-center gap-3">
-                    <Zap className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-medium">Connect with {connector.name}</div>
-                      <div className="text-xs opacity-80">Recommended for Abstract</div>
-                    </div>
-                  </div>
-                </Button>
-              )
-            }
-            return null
-          })}
-          
-          {/* Show other wallet options */}
-          <div className="space-y-2">
-            {connectors.map((connector) => {
-              if (connector.name !== 'MetaMask') {
-                return (
-                  <Button
-                    key={connector.uid}
-                    onClick={() => connect({ connector })}
-                    disabled={isConnecting}
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Wallet className="mr-2 h-4 w-4" />
-                    {connector.name}
-                  </Button>
-                )
-              }
-              return null
-            })}
+        {/* Primary AGW Connection Button - Following Abstract's official docs */}
+        <Button
+          onClick={login}
+          disabled={isConnecting}
+          variant="default"
+          className="w-full justify-center h-14 text-base font-medium"
+        >
+          {isConnecting ? (
+            <div className="flex items-center gap-3">
+              <Zap className="h-5 w-5 animate-spin" />
+              <span>Connecting to Abstract Global Wallet...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <AbstractLogo className="h-6 w-6" />
+              <div className="text-left">
+                <div className="font-semibold">Connect Abstract Global Wallet</div>
+                <div className="text-xs opacity-90">Gasless transactions • Best experience</div>
+              </div>
+            </div>
+          )}
+        </Button>
+
+        {/* Benefits specific to Abstract Global Wallet */}
+        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-5 w-5 text-primary" />
+            <span className="text-sm font-semibold text-primary">Abstract Global Wallet Benefits</span>
           </div>
+          <ul className="text-sm text-muted-foreground space-y-2">
+            <li className="flex items-start gap-2">
+              <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <span><strong>Gasless transactions</strong> - No gas fees for most operations</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <span><strong>Seamless experience</strong> - Purpose-built for Abstract blockchain</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <span><strong>Enhanced security</strong> - Latest Web3 security standards</span>
+            </li>
+          </ul>
         </div>
 
-        <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Abstract Network Benefits</span>
-          </div>
-          <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• Lower transaction fees</li>
-            <li>• Faster confirmation times</li>
-            <li>• Built for modern Web3 applications</li>
-            <li>• Enhanced security features</li>
-          </ul>
+        {/* Small note about alternatives */}
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            Abstract Global Wallet is the recommended way to connect to Abstract blockchain
+          </p>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// Abstract Logo component from official docs
+function AbstractLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      width="20"
+      height="18"
+      viewBox="0 0 52 47"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path d="M33.7221 31.0658L43.997 41.3463L39.1759 46.17L28.901 35.8895C28.0201 35.0081 26.8589 34.5273 25.6095 34.5273C24.3602 34.5273 23.199 35.0081 22.3181 35.8895L12.0432 46.17L7.22205 41.3463L17.4969 31.0658H33.7141H33.7221Z" fill="currentColor" />
+      <path d="M35.4359 28.101L49.4668 31.8591L51.2287 25.2645L37.1978 21.5065C35.9965 21.186 34.9954 20.4167 34.3708 19.335C33.7461 18.2613 33.586 17.0033 33.9063 15.8013L37.6623 1.76283L31.0713 0L27.3153 14.0385L35.4279 28.093L35.4359 28.101Z" fill="currentColor" />
+      <path d="M15.7912 28.101L1.76028 31.8591L-0.00158691 25.2645L14.0293 21.5065C15.2306 21.186 16.2316 20.4167 16.8563 19.335C17.4809 18.2613 17.6411 17.0033 17.3208 15.8013L13.5648 1.76283L20.1558 0L23.9118 14.0385L15.7992 28.093L15.7912 28.101Z" fill="currentColor" />
+    </svg>
   )
 }
