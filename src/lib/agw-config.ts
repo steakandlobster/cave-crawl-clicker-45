@@ -24,6 +24,7 @@ export const wagmiConfig = createConfig({
 // AGW Client configuration
 export const agwConfig = {
   projectId: 'cave-explorer', // Your project identifier
+  chain: abstractTestnet, // Primary chain for AGW
   chains: [abstractTestnet, abstract],
   enableSessionKeys: true,
   enableGasless: true,

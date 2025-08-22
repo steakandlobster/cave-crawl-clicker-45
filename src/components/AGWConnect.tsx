@@ -193,34 +193,6 @@ export function AGWConnect() {
           )}
         </Button>
 
-        {/* Benefits specific to Abstract Global Wallet */}
-        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="h-5 w-5 text-primary" />
-            <span className="text-sm font-semibold text-primary">Abstract Global Wallet Benefits</span>
-          </div>
-          <ul className="text-sm text-muted-foreground space-y-2">
-            <li className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <span><strong>Gasless transactions</strong> - No gas fees for most operations</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <span><strong>Seamless experience</strong> - Purpose-built for Abstract blockchain</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <span><strong>Enhanced security</strong> - Latest Web3 security standards</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Small note about alternatives */}
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">
-            Abstract Global Wallet is the recommended way to connect to Abstract blockchain
-          </p>
-        </div>
       </CardContent>
     </Card>
   )
