@@ -14,9 +14,10 @@ function getAllowedOrigin(req: Request) {
 }
 function getCorsHeaders(req: Request) {
   const allowedOrigin = getAllowedOrigin(req);
+  const requestedHeaders = req.headers.get('access-control-request-headers') || 'authorization, x-client-info, apikey, content-type, cookie';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
+    'Access-Control-Allow-Headers': requestedHeaders,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
     'Vary': 'Origin',
