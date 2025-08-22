@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { useAccount, useBalance, useDisconnect } from 'wagmi'
-import { useLoginWithAbstract } from '@abstract-foundation/agw-react'
+import { useAccount, useBalance, useDisconnect, useConnect } from 'wagmi'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +9,7 @@ import { toast } from 'sonner'
 
 export function AGWConnect() {
   const { address, isConnected, chain, status } = useAccount()
-  const { login, logout } = useLoginWithAbstract()
+  const { connect, connectors, isPending } = useConnect()
   const { disconnect } = useDisconnect()
   const [copied, setCopied] = useState(false)
 
@@ -22,7 +21,7 @@ export function AGWConnect() {
     }
   })
 
-  const isConnecting = status === 'connecting' || status === 'reconnecting'
+  const isConnecting = status === 'connecting' || status === 'reconnecting' || isPending
 
   const copyAddress = () => {
     if (address) {
@@ -143,10 +142,7 @@ export function AGWConnect() {
           </div>
 
           <Button
-            onClick={() => {
-              logout()
-              disconnect()
-            }}
+            onClick={() => disconnect()}
             variant="outline"
             className="w-full"
           >
@@ -170,32 +166,64 @@ export function AGWConnect() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Primary AGW Connection Button */}
-        <Button
-          onClick={login}
-          disabled={isConnecting}
-          variant="default"
-          className="w-full justify-center relative h-12"
-        >
-          <div className="flex items-center gap-3">
-            <Zap className="h-5 w-5" />
-            <div className="text-left">
-              <div className="font-medium">Connect with Abstract Global Wallet</div>
-              <div className="text-xs opacity-80">Recommended • Gasless transactions</div>
-            </div>
+        {/* Primary Abstract Wallet Connection */}
+        <div className="space-y-3">
+          {connectors.map((connector) => {
+            // Prioritize MetaMask for Abstract connection
+            if (connector.name === 'MetaMask') {
+              return (
+                <Button
+                  key={connector.uid}
+                  onClick={() => connect({ connector })}
+                  disabled={isConnecting}
+                  variant="default"
+                  className="w-full justify-center h-12"
+                >
+                  <div className="flex items-center gap-3">
+                    <Zap className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Connect with {connector.name}</div>
+                      <div className="text-xs opacity-80">Recommended for Abstract</div>
+                    </div>
+                  </div>
+                </Button>
+              )
+            }
+            return null
+          })}
+          
+          {/* Show other wallet options */}
+          <div className="space-y-2">
+            {connectors.map((connector) => {
+              if (connector.name !== 'MetaMask') {
+                return (
+                  <Button
+                    key={connector.uid}
+                    onClick={() => connect({ connector })}
+                    disabled={isConnecting}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
+                    <Wallet className="mr-2 h-4 w-4" />
+                    {connector.name}
+                  </Button>
+                )
+              }
+              return null
+            })}
           </div>
-        </Button>
+        </div>
 
         <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Why Abstract Global Wallet?</span>
+            <span className="text-sm font-medium text-primary">Abstract Network Benefits</span>
           </div>
           <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• No gas fees for transactions</li>
-            <li>• Seamless Web3 experience</li>
-            <li>• Built specifically for Abstract blockchain</li>
-            <li>• Enhanced security and performance</li>
+            <li>• Lower transaction fees</li>
+            <li>• Faster confirmation times</li>
+            <li>• Built for modern Web3 applications</li>
+            <li>• Enhanced security features</li>
           </ul>
         </div>
       </CardContent>
