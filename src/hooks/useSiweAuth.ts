@@ -53,10 +53,18 @@ export function useSiweAuth() {
 
   // Sign in with SIWE
   const signIn = useCallback(async () => {
-    if (!address || !chainId || isAuthenticating) return;
+    if (isAuthenticating) return;
 
     setIsAuthenticating(true);
     try {
+      // Ensure wallet is connected before proceeding
+      if (!isConnected && typeof window !== 'undefined' && (window as any).ethereum) {
+        await (window as any).ethereum.request?.({ method: 'eth_requestAccounts' });
+      }
+      if (!address || !chainId) {
+        throw new Error('Wallet not connected');
+      }
+
       // Get nonce
       const nonceResponse = await fetch(`${SIWE_API_BASE}/siwe-nonce`, {
         credentials: 'include',

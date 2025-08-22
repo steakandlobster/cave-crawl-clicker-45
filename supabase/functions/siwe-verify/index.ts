@@ -31,6 +31,12 @@ interface VerifyRequest {
   signature: string
 }
 
+function getCookie(req: Request, name: string): string | null {
+  const cookieHeader = req.headers.get('cookie') || '';
+  const match = cookieHeader.match(new RegExp(`${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // Normalize signatures from providers that return ABI-encoded bytes or 6492-wrapped signatures
 function normalizeSignature(sig: string): string {
   if (!sig) return sig;
@@ -154,6 +160,15 @@ serve(async (req) => {
 
     // Parse and verify the SIWE message
     const siweMessage = new SiweMessage(message)
+    // Validate nonce from HttpOnly cookie to prevent replay attacks
+    const serverNonce = getCookie(req, 'siwe-nonce')
+    if (!serverNonce || serverNonce !== (siweMessage as any).nonce) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Invalid nonce' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      )
+    }
+
     const chainId = Number(siweMessage.chainId)
     const rpcUrl = RPC_MAP[chainId]
     const provider = rpcUrl ? new JsonRpcProvider(rpcUrl) : undefined

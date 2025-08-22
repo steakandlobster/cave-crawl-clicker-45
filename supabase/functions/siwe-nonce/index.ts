@@ -45,7 +45,12 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ nonce }),
       { 
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
+        headers: { 
+          ...getCorsHeaders(req), 
+          'Content-Type': 'application/json',
+          // Store nonce in an HttpOnly cookie for server-side validation (5 min expiry)
+          'Set-Cookie': `siwe-nonce=${encodeURIComponent(nonce)}; HttpOnly; Secure; SameSite=None; Max-Age=300; Path=/`
+        } 
       }
     )
   } catch (error) {
