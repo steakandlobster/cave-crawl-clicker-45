@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useAccount, useBalance, useDisconnect, useConnect } from 'wagmi'
+import { useAccount, useBalance, useDisconnect } from 'wagmi'
+import { useLoginWithAbstract } from '@abstract-foundation/agw-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,8 +9,8 @@ import { Wallet, LogOut, Copy, Check, Coins, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function AGWConnect() {
-  const { address, isConnected, chain } = useAccount()
-  const { connect, connectors, isPending } = useConnect()
+  const { address, isConnected, chain, status } = useAccount()
+  const { login, logout } = useLoginWithAbstract()
   const { disconnect } = useDisconnect()
   const [copied, setCopied] = useState(false)
 
@@ -20,6 +21,8 @@ export function AGWConnect() {
       enabled: !!address && isConnected
     }
   })
+
+  const isConnecting = status === 'connecting' || status === 'reconnecting'
 
   const copyAddress = () => {
     if (address) {
@@ -43,6 +46,28 @@ export function AGWConnect() {
     return `${wholePart}.${fractionalStr.slice(0, 6)}`
   }
 
+  // Loading state during connection
+  if (isConnecting) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 animate-spin" />
+            Connecting...
+          </CardTitle>
+          <CardDescription>
+            Connecting to Abstract Global Wallet
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (isConnected && address) {
     return (
       <Card className="w-full max-w-md">
@@ -52,7 +77,7 @@ export function AGWConnect() {
             Abstract Wallet Connected
           </CardTitle>
           <CardDescription>
-            Your wallet is connected and ready for Abstract blockchain
+            Your Abstract Global Wallet is connected and ready
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -81,6 +106,11 @@ export function AGWConnect() {
               <Badge variant="secondary">{chain.name}</Badge>
             </div>
           )}
+
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Gasless Transactions Enabled</span>
+          </div>
 
           <Separator />
 
@@ -113,7 +143,10 @@ export function AGWConnect() {
           </div>
 
           <Button
-            onClick={() => disconnect()}
+            onClick={() => {
+              logout()
+              disconnect()
+            }}
             variant="outline"
             className="w-full"
           >
@@ -129,38 +162,42 @@ export function AGWConnect() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wallet className="h-5 w-5" />
+          <Zap className="h-5 w-5" />
           Connect to Abstract
         </CardTitle>
         <CardDescription>
-          Connect using Abstract Global Wallet for the best experience with gasless transactions
+          Connect using Abstract Global Wallet for gasless transactions and seamless Web3 experience
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Primary recommendation for Abstract wallets */}
-        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg mb-4">
+      <CardContent className="space-y-4">
+        {/* Primary AGW Connection Button */}
+        <Button
+          onClick={login}
+          disabled={isConnecting}
+          variant="default"
+          className="w-full justify-center relative h-12"
+        >
+          <div className="flex items-center gap-3">
+            <Zap className="h-5 w-5" />
+            <div className="text-left">
+              <div className="font-medium">Connect with Abstract Global Wallet</div>
+              <div className="text-xs opacity-80">Recommended • Gasless transactions</div>
+            </div>
+          </div>
+        </Button>
+
+        <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Recommended</span>
+            <span className="text-sm font-medium text-primary">Why Abstract Global Wallet?</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Use MetaMask or compatible wallets connected to Abstract network for the best experience with lower fees.
-          </p>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>• No gas fees for transactions</li>
+            <li>• Seamless Web3 experience</li>
+            <li>• Built specifically for Abstract blockchain</li>
+            <li>• Enhanced security and performance</li>
+          </ul>
         </div>
-
-        {/* Wallet connectors */}
-        {connectors.map((connector) => (
-          <Button
-            key={connector.uid}
-            onClick={() => connect({ connector })}
-            disabled={isPending}
-            variant="outline"
-            className="w-full justify-start"
-          >
-            <Wallet className="mr-2 h-4 w-4" />
-            {connector.name}
-          </Button>
-        ))}
       </CardContent>
     </Card>
   )
