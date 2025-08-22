@@ -1,10 +1,66 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Credentials': 'true',
+}
+
+// Secure session utilities using AES-GCM encryption (iron-session style)
+class SessionManager {
+  private static async getKey(): Promise<CryptoKey> {
+    const secret = Deno.env.get('SESSION_SECRET')
+    if (!secret) {
+      throw new Error('SESSION_SECRET not configured')
+    }
+    
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveKey']
+    )
+    
+    return await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: new TextEncoder().encode('siwe-session'),
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    )
+  }
+
+  static async decrypt(encryptedData: string): Promise<any> {
+    try {
+      const key = await this.getKey()
+      const decoded = atob(encryptedData)
+      const bytes = new Uint8Array(decoded.length)
+      for (let i = 0; i < decoded.length; i++) {
+        bytes[i] = decoded.charCodeAt(i)
+      }
+      
+      const iv = bytes.slice(0, 12)
+      const ciphertext = bytes.slice(12)
+      
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        ciphertext
+      )
+      
+      return JSON.parse(new TextDecoder().decode(decrypted))
+    } catch {
+      throw new Error('Failed to decrypt session')
+    }
+  }
 }
 
 serve(async (req) => {
@@ -24,7 +80,7 @@ serve(async (req) => {
       )
     }
 
-    // Get session from cookie
+    // Get encrypted session from cookie
     const cookies = req.headers.get('cookie') || ''
     const sessionMatch = cookies.match(/siwe-session=([^;]+)/)
     
@@ -42,7 +98,9 @@ serve(async (req) => {
     }
 
     try {
-      const sessionData = JSON.parse(decodeURIComponent(sessionMatch[1]))
+      // Decrypt the session data
+      const encryptedSession = decodeURIComponent(sessionMatch[1])
+      const sessionData = await SessionManager.decrypt(encryptedSession)
       
       // Check if session is expired
       if (sessionData.expirationTime && new Date() > new Date(sessionData.expirationTime)) {
@@ -68,10 +126,11 @@ serve(async (req) => {
         }
       )
     } catch (error) {
+      console.error('Session decryption error:', error)
       return new Response(
         JSON.stringify({ 
           ok: false, 
-          error: 'Invalid session data' 
+          error: 'Invalid or corrupted session data' 
         }),
         { 
           status: 401, 
