@@ -91,7 +91,7 @@ export default function Auth() {
           <div className="flex justify-center">
             {!isConnected || !isAuthenticated ? (
               <SiweButton />
-            ) : isChecking ? (
+            ) : isChecking || hasProfile === null ? (
               <Card className="w-full max-w-md">
                 <div className="p-6 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -103,7 +103,13 @@ export default function Auth() {
                 onComplete={handleSignupComplete} 
                 initialReferralCode={referralCodeFromUrl}
               />
-            ) : null}
+            ) : (
+              <Card className="w-full max-w-md">
+                <div className="p-6 text-center">
+                  <p>Redirecting...</p>
+                </div>
+              </Card>
+            )}
           </div>
 
         </div>
