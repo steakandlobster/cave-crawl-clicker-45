@@ -95,11 +95,20 @@ serve(async (req) => {
       )
     }
 
-    // Get encrypted session from cookie
-    const cookies = req.headers.get('cookie') || ''
-    const sessionMatch = cookies.match(/siwe-session=([^;]+)/)
-    
-    if (!sessionMatch) {
+    // Attempt to read session from Authorization bearer or cookie
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || ''
+    const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i)
+    let encryptedSession: string | null = bearerMatch?.[1] || null
+
+    if (!encryptedSession) {
+      const cookies = req.headers.get('cookie') || ''
+      const sessionMatch = cookies.match(/siwe-session=([^;]+)/)
+      if (sessionMatch) {
+        encryptedSession = decodeURIComponent(sessionMatch[1])
+      }
+    }
+
+    if (!encryptedSession) {
       return new Response(
         JSON.stringify({ 
           ok: false, 
@@ -114,7 +123,6 @@ serve(async (req) => {
 
     try {
       // Decrypt the session data
-      const encryptedSession = decodeURIComponent(sessionMatch[1])
       const sessionData = await SessionManager.decrypt(encryptedSession)
       
       // Check if session is expired

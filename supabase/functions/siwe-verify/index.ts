@@ -179,7 +179,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           ok: true, 
-          user: sessionData 
+          user: sessionData,
+          token: encryptedSession
         }),
         { 
           headers: { 

@@ -5,6 +5,7 @@ import { SiweAuthData } from '@/types/siwe';
 import { toast } from 'sonner';
 
 const SIWE_API_BASE = 'https://aegayadckentahcljxhf.supabase.co/functions/v1';
+const LOCAL_TOKEN_KEY = 'siwe_session_token';
 
 export function useSiweAuth() {
   const { address, chainId, isConnected } = useAccount();
@@ -22,11 +23,13 @@ export function useSiweAuth() {
 
     setIsLoading(true);
     try {
+      const localToken = localStorage.getItem(LOCAL_TOKEN_KEY);
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (localToken) headers['Authorization'] = `Bearer ${localToken}`;
+
       const response = await fetch(`${SIWE_API_BASE}/siwe-user`, {
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       const text = await response.text();
@@ -96,6 +99,9 @@ export function useSiweAuth() {
         throw new Error(verifyJson?.error || `Failed to verify (status ${verifyResponse.status})`);
       }
 
+      if (verifyJson?.token) {
+        try { localStorage.setItem(LOCAL_TOKEN_KEY, verifyJson.token); } catch {}
+      }
       await checkAuthStatus();
       toast.success('Successfully authenticated!');
     } catch (error: any) {
@@ -114,8 +120,7 @@ export function useSiweAuth() {
         credentials: 'include',
       });
       const text = await res.text();
-      console.log('[SIWE] /siwe-logout status:', res.status, 'body:', text);
-
+      try { localStorage.removeItem(LOCAL_TOKEN_KEY); } catch {}
       setAuthData(null);
       toast.success('Signed out successfully');
     } catch (error) {
