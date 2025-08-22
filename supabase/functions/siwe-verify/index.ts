@@ -2,6 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { SiweMessage } from 'https://esm.sh/siwe@2.1.4'
 import { encode as encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { JsonRpcProvider } from 'https://esm.sh/ethers@6.15.0'
 
 function getAllowedOrigin(req: Request) {
   const origin = req.headers.get('origin');
@@ -23,6 +24,7 @@ function getCorsHeaders(req: Request) {
     'Vary': 'Origin',
   }
 }
+
 
 interface VerifyRequest {
   message: string
@@ -64,6 +66,10 @@ function normalizeSignature(sig: string): string {
 
   return sig;
 }
+
+const RPC_MAP: Record<number, string> = {
+  11124: 'https://api.testnet.abs.xyz', // Abstract Testnet
+};
 
 // Secure session utilities using AES-GCM encryption (iron-session style)
 class SessionManager {
@@ -148,7 +154,11 @@ serve(async (req) => {
 
     // Parse and verify the SIWE message
     const siweMessage = new SiweMessage(message)
-    const result = await siweMessage.verify({ signature: normalizedSignature })
+    const chainId = Number(siweMessage.chainId)
+    const rpcUrl = RPC_MAP[chainId]
+    const provider = rpcUrl ? new JsonRpcProvider(rpcUrl) : undefined
+
+    const result = await siweMessage.verify({ signature: normalizedSignature, provider })
 
     if (result.success) {
       // Create secure session data
