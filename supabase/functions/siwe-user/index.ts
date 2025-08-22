@@ -1,11 +1,15 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? '*'
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
+  }
 }
 
 // Secure session utilities using AES-GCM encryption (iron-session style)
@@ -66,7 +70,7 @@ class SessionManager {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(req) })
   }
 
   try {
@@ -75,7 +79,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'Method not allowed' }),
         { 
           status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -92,7 +96,7 @@ serve(async (req) => {
         }),
         { 
           status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -111,7 +115,7 @@ serve(async (req) => {
           }),
           { 
             status: 401, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
           }
         )
       }
@@ -122,7 +126,7 @@ serve(async (req) => {
           user: sessionData 
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     } catch (error) {
@@ -134,7 +138,7 @@ serve(async (req) => {
         }),
         { 
           status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -147,7 +151,7 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
       }
     )
   }

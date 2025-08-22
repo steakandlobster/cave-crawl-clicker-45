@@ -1,13 +1,17 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { SiweMessage } from 'https://esm.sh/siwe@2.1.4'
-import { encodeHex } from 'https://deno.land/std@0.168.0/encoding/hex.ts'
 import { encodeBase64 } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? '*'
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
+  }
 }
 
 interface VerifyRequest {
@@ -63,45 +67,12 @@ class SessionManager {
     
     return encodeBase64(combined)
   }
-
-  static async decrypt(encryptedData: string): Promise<any> {
-    try {
-      const key = await this.getKey()
-      const combined = new Uint8Array(
-        await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: new Uint8Array(0) },
-          key,
-          new ArrayBuffer(0)
-        )
-      )
-      
-      // This is a simplified version - in production you'd properly split IV and data
-      const decoded = atob(encryptedData)
-      const bytes = new Uint8Array(decoded.length)
-      for (let i = 0; i < decoded.length; i++) {
-        bytes[i] = decoded.charCodeAt(i)
-      }
-      
-      const iv = bytes.slice(0, 12)
-      const ciphertext = bytes.slice(12)
-      
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        key,
-        ciphertext
-      )
-      
-      return JSON.parse(new TextDecoder().decode(decrypted))
-    } catch {
-      throw new Error('Failed to decrypt session')
-    }
-  }
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(req) })
   }
 
   try {
@@ -110,7 +81,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'Method not allowed' }),
         { 
           status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -122,7 +93,7 @@ serve(async (req) => {
         JSON.stringify({ error: 'Message and signature are required' }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -141,11 +112,11 @@ serve(async (req) => {
         createdAt: new Date().toISOString(),
       }
 
-      // Encrypt session data using iron-session style encryption
+      // Encrypt session data
       const encryptedSession = await SessionManager.encrypt(sessionData)
       
-      // Set secure encrypted session cookie
-      const sessionCookie = `siwe-session=${encodeURIComponent(encryptedSession)}; HttpOnly; Secure; SameSite=Strict; Max-Age=86400; Path=/`
+      // Set secure encrypted session cookie; use SameSite=None for cross-site requests
+      const sessionCookie = `siwe-session=${encodeURIComponent(encryptedSession)}; HttpOnly; Secure; SameSite=None; Max-Age=86400; Path=/`
 
       return new Response(
         JSON.stringify({ 
@@ -154,7 +125,7 @@ serve(async (req) => {
         }),
         { 
           headers: { 
-            ...corsHeaders, 
+            ...getCorsHeaders(req), 
             'Content-Type': 'application/json',
             'Set-Cookie': sessionCookie
           } 
@@ -168,7 +139,7 @@ serve(async (req) => {
         }),
         { 
           status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -180,8 +151,8 @@ serve(async (req) => {
         error: 'Verification failed' 
       }),
       { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        status: 500,
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
       }
     )
   }

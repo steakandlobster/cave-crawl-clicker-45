@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -8,6 +9,7 @@ import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { useAccount } from 'wagmi';
 import { supabase } from '@/integrations/supabase/client';
 import caveBackground from "@/assets/cave-background.jpg";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function Auth() {
   const { isConnected, address } = useAccount();
@@ -40,7 +42,8 @@ export default function Auth() {
           .single();
 
         if (profile && !error) {
-          // Profile exists, redirect to home
+          // Profile exists, set state and redirect to home
+          setHasProfile(true);
           navigate('/');
         } else {
           // No profile found, show signup form
@@ -88,29 +91,31 @@ export default function Auth() {
           </div>
 
           {/* SIWE Authentication and Profile Setup */}
-          <div className="flex justify-center">
-            {!isConnected || !isAuthenticated ? (
-              <SiweButton />
-            ) : isChecking || hasProfile === null ? (
-              <Card className="w-full max-w-md">
-                <div className="p-6 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p>Checking your profile...</p>
-                </div>
-              </Card>
-            ) : hasProfile === false ? (
-              <SignupWithReferral 
-                onComplete={handleSignupComplete} 
-                initialReferralCode={referralCodeFromUrl}
-              />
-            ) : (
-              <Card className="w-full max-w-md">
-                <div className="p-6 text-center">
-                  <p>Redirecting...</p>
-                </div>
-              </Card>
-            )}
-          </div>
+          <ErrorBoundary>
+            <div className="flex justify-center">
+              {!isConnected || !isAuthenticated ? (
+                <SiweButton />
+              ) : isChecking || hasProfile === null ? (
+                <Card className="w-full max-w-md">
+                  <div className="p-6 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Checking your profile...</p>
+                  </div>
+                </Card>
+              ) : hasProfile === false ? (
+                <SignupWithReferral 
+                  onComplete={handleSignupComplete} 
+                  initialReferralCode={referralCodeFromUrl}
+                />
+              ) : (
+                <Card className="w-full max-w-md">
+                  <div className="p-6 text-center">
+                    <p>Redirecting...</p>
+                  </div>
+                </Card>
+              )}
+            </div>
+          </ErrorBoundary>
 
         </div>
       </div>
