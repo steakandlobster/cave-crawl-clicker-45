@@ -103,14 +103,6 @@ export default function Auth() {
             ) : null}
           </div>
 
-          <div className="text-center text-sm text-muted-foreground">
-            <ul className="mt-2 space-y-1">
-              <li>• Play on-chain cave exploration games</li>
-              <li>• Earn verifiable rewards on Abstract</li>
-              <li>• Compete on the blockchain leaderboard</li>
-              <li>• Own your achievements as NFTs</li>
-            </ul>
-          </div>
         </div>
       </div>
     </div>

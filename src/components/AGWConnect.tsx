@@ -172,20 +172,17 @@ export function AGWConnect() {
           onClick={login}
           disabled={isConnecting}
           variant="default"
-          className="w-full justify-center h-14 text-base font-medium"
+          className="w-full justify-center h-12 text-base font-medium"
         >
           {isConnecting ? (
             <div className="flex items-center gap-3">
               <Zap className="h-5 w-5 animate-spin" />
-              <span>Connecting to Abstract Global Wallet...</span>
+              <span>Connecting...</span>
             </div>
           ) : (
             <div className="flex items-center gap-3">
               <AbstractLogo className="h-6 w-6" />
-              <div className="text-left">
-                <div className="font-semibold">Connect Abstract Global Wallet</div>
-                <div className="text-xs opacity-90">Gasless transactions • Best experience</div>
-              </div>
+              <span>Connect Abstract Global Wallet</span>
             </div>
           )}
         </Button>
