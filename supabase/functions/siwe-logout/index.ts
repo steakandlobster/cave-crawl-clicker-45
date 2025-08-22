@@ -23,7 +23,7 @@ function getCorsHeaders(req: Request) {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: getCorsHeaders(req) })
+    return new Response(null, { status: 204, headers: getCorsHeaders(req) })
   }
 
   try {
