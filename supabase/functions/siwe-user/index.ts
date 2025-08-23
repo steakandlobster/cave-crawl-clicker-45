@@ -1,7 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { SiweMessage } from 'npm:siwe';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-
 // CORS helpers
 function getAllowedOrigin(req) {
   const origin = req.headers.get('origin');
@@ -12,7 +11,6 @@ function getAllowedOrigin(req) {
   } catch  {}
   return '*';
 }
-
 function getCorsHeaders(req) {
   const allowedOrigin = getAllowedOrigin(req);
   const requestedHeaders = req.headers.get('access-control-request-headers') || 'authorization, x-client-info, apikey, content-type, cookie';
@@ -24,13 +22,11 @@ function getCorsHeaders(req) {
     Vary: 'Origin'
   };
 }
-
 function getCookie(req, name) {
   const cookieHeader = req.headers.get('cookie') || '';
   const match = cookieHeader.match(new RegExp(`${name}=([^;]+)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
-
 // Normalize signatures from providers that return ABI-encoded bytes or ERC-6492 wrapped signatures
 function normalizeSignature(sig) {
   if (!sig) return sig;
@@ -62,8 +58,7 @@ function normalizeSignature(sig) {
   } catch (_) {}
   return sig;
 }
-
-serve(async (req) => {
+serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -71,7 +66,6 @@ serve(async (req) => {
       headers: getCorsHeaders(req)
     });
   }
-
   try {
     // === NEW: Handle nonce setting ===
     // This is the new part you need to add
@@ -79,7 +73,6 @@ serve(async (req) => {
     if (req.method === 'POST' && url.pathname.endsWith('/nonce')) {
       try {
         const { nonce } = await req.json();
-        
         if (!nonce || typeof nonce !== 'string') {
           return new Response(JSON.stringify({
             ok: false,
@@ -92,13 +85,11 @@ serve(async (req) => {
             }
           });
         }
-
         // Set the nonce as an HttpOnly cookie
         const nonceCookie = `siwe-nonce=${nonce}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=300`; // 5 minutes
-        
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           ok: true,
-          message: 'Nonce set successfully' 
+          message: 'Nonce set successfully'
         }), {
           headers: {
             ...getCorsHeaders(req),
@@ -120,7 +111,6 @@ serve(async (req) => {
       }
     }
     // === END NEW SECTION ===
-
     if (req.method === 'GET') {
       // Protected: requires a valid Supabase JWT in Authorization header
       const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_ANON_KEY'), {
@@ -154,7 +144,6 @@ serve(async (req) => {
         }
       });
     }
-
     if (req.method === 'POST') {
       // Require Supabase JWT before SIWE verification
       const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_ANON_KEY'), {
@@ -178,7 +167,6 @@ serve(async (req) => {
           }
         });
       }
-
       // Verify SIWE and bootstrap a Supabase session via magic link OTP
       const { message, signature } = await req.json();
       if (!message || !signature) {
@@ -193,10 +181,8 @@ serve(async (req) => {
           }
         });
       }
-
       const normalizedSignature = normalizeSignature(signature);
       const siweMessage = new SiweMessage(message);
-
       // Validate nonce from HttpOnly cookie to prevent replay attacks
       const serverNonce = getCookie(req, 'siwe-nonce');
       if (!serverNonce || serverNonce !== siweMessage.nonce) {
@@ -211,11 +197,9 @@ serve(async (req) => {
           }
         });
       }
-
       const result = await siweMessage.verify({
         signature: normalizedSignature
       });
-
       if (!result.success) {
         return new Response(JSON.stringify({
           ok: false,
@@ -228,17 +212,14 @@ serve(async (req) => {
           }
         });
       }
-
       const admin = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
       const email = `${siweMessage.address.toLowerCase()}@siwe.eth`;
-
       // Ensure user exists
       let userId = null;
       const { data: found, error: findErr } = await admin.auth.admin.getUserByEmail(email);
       if (findErr) {
         console.error('getUserByEmail error:', findErr);
       }
-
       if (!found?.user) {
         const { data: created, error: createErr } = await admin.auth.admin.createUser({
           email,
@@ -266,7 +247,6 @@ serve(async (req) => {
       } else {
         userId = found.user.id;
       }
-
       // Generate a magic-link OTP and let the client exchange it for a session
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'magiclink',
@@ -285,7 +265,6 @@ serve(async (req) => {
           }
         });
       }
-
       const emailOtp = linkData?.properties?.email_otp || linkData?.email_otp;
       if (!emailOtp) {
         return new Response(JSON.stringify({
@@ -299,7 +278,6 @@ serve(async (req) => {
           }
         });
       }
-
       // Optionally clear the nonce cookie after successful verification
       const clearNonce = 'siwe-nonce=; HttpOnly; Secure; SameSite=None; Max-Age=0; Path=/';
       return new Response(JSON.stringify({
@@ -315,7 +293,6 @@ serve(async (req) => {
         }
       });
     }
-
     return new Response(JSON.stringify({
       ok: false,
       error: 'Method not allowed'
