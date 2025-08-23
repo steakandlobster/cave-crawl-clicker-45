@@ -1,3 +1,350 @@
+// siwe-user/index.ts - Vite + React SIWE User Handler
+
+import { createSiweMessage } from 'viem/siwe'
+import type { Address } from 'viem'
+
+/**
+ * SIWE Session Data interface
+ */
+export interface SessionData {
+  nonce?: string
+  isAuthenticated?: boolean
+  address?: Address
+  chainId?: number
+  expirationTime?: string
+  signature?: string
+  message?: string
+}
+
+/**
+ * Authentication response interface
+ */
+export interface AuthResponse {
+  ok: boolean
+  message?: string
+  user?: {
+    isAuthenticated: boolean
+    address: Address
+    chainId?: number
+    expirationTime?: string
+  }
+  isConfigurationError?: boolean
+}
+
+/**
+ * SIWE Authentication Manager for Vite + React
+ * Handles client-side session management and authentication state
+ * 
+ * Note: In a production app, you'd typically use a backend API
+ * This implementation uses localStorage for demo purposes
+ */
+export class SiweUserManager {
+  private static readonly SESSION_KEY = 'siwe_session'
+  private static readonly NONCE_KEY = 'siwe_nonce'
+  
+  /**
+   * Generate a random nonce for SIWE message
+   */
+  static generateNonce(): string {
+    const array = new Uint8Array(16)
+    crypto.getRandomValues(array)
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+  }
+
+  /**
+   * Store nonce in localStorage (in production, this would be handled server-side)
+   */
+  static storeNonce(nonce: string): void {
+    localStorage.setItem(this.NONCE_KEY, nonce)
+  }
+
+  /**
+   * Get stored nonce from localStorage
+   */
+  static getNonce(): string | null {
+    return localStorage.getItem(this.NONCE_KEY)
+  }
+
+  /**
+   * Clear stored nonce
+   */
+  static clearNonce(): void {
+    localStorage.removeItem(this.NONCE_KEY)
+  }
+
+  /**
+   * Create a SIWE message for signing
+   */
+  static createSiweMessage(params: {
+    address: Address
+    chainId: number
+    nonce: string
+  }): string {
+    const { address, chainId, nonce } = params
+    
+    const message = createSiweMessage({
+      domain: window.location.host,
+      address,
+      statement: "Sign in with Ethereum to authenticate with this application.",
+      uri: window.location.origin,
+      version: "1",
+      chainId,
+      nonce,
+      issuedAt: new Date(),
+      expirationTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 1 week
+    })
+
+    return message
+  }
+
+  /**
+   * Store user session after successful authentication
+   */
+  static storeSession(sessionData: SessionData): void {
+    const session = {
+      ...sessionData,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(this.SESSION_KEY, JSON.stringify(session))
+  }
+
+  /**
+   * Get current user session
+   */
+  static getSession(): SessionData | null {
+    try {
+      const stored = localStorage.getItem(this.SESSION_KEY)
+      if (!stored) return null
+      
+      return JSON.parse(stored)
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Clear user session (logout)
+   */
+  static clearSession(): void {
+    localStorage.removeItem(this.SESSION_KEY)
+    this.clearNonce()
+  }
+
+  /**
+   * Check if current session is valid and not expired
+   */
+  static isSessionValid(session: SessionData | null = null): boolean {
+    const currentSession = session || this.getSession()
+    
+    if (!currentSession || !currentSession.isAuthenticated) {
+      return false
+    }
+
+    // Check expiration
+    if (currentSession.expirationTime) {
+      const expirationTime = new Date(currentSession.expirationTime).getTime()
+      if (expirationTime <= Date.now()) {
+        this.clearSession() // Clean up expired session
+        return false
+      }
+    }
+
+    return true
+  }
+
+  /**
+   * Get current authenticated user information
+   * This mimics the API route behavior but works client-side
+   */
+  static getCurrentUser(): AuthResponse {
+    try {
+      const session = this.getSession()
+
+      if (!session || !session.isAuthenticated || !session.address) {
+        return {
+          ok: false,
+          message: "No user session found. Please sign in with your wallet."
+        }
+      }
+
+      // Check if session is expired
+      if (session.expirationTime && new Date(session.expirationTime).getTime() < Date.now()) {
+        this.clearSession()
+        return {
+          ok: false,
+          message: "SIWE session expired. Please sign in again."
+        }
+      }
+
+      // Return successful authentication data
+      return {
+        ok: true,
+        user: {
+          isAuthenticated: session.isAuthenticated,
+          address: session.address,
+          chainId: session.chainId,
+          expirationTime: session.expirationTime,
+        }
+      }
+
+    } catch (error) {
+      console.error("SIWE getCurrentUser error:", error)
+      return {
+        ok: false,
+        message: "Failed to retrieve user session. Please try again."
+      }
+    }
+  }
+
+  /**
+   * Verify a signed SIWE message
+   * In production, this would typically be done on your backend
+   */
+  static async verifySignature(params: {
+    message: string
+    signature: string
+    expectedAddress: Address
+  }): Promise<boolean> {
+    try {
+      const { message, signature, expectedAddress } = params
+      
+      // Import viem for signature verification
+      const { verifyMessage } = await import('viem')
+      
+      const isValid = await verifyMessage({
+        address: expectedAddress,
+        message,
+        signature: signature as `0x${string}`
+      })
+
+      return isValid
+    } catch (error) {
+      console.error("SIWE signature verification error:", error)
+      return false
+    }
+  }
+
+  /**
+   * Complete SIWE authentication process
+   */
+  static async authenticate(params: {
+    address: Address
+    chainId: number
+    signature: string
+    message: string
+  }): Promise<AuthResponse> {
+    try {
+      const { address, chainId, signature, message } = params
+      const storedNonce = this.getNonce()
+
+      if (!storedNonce) {
+        return {
+          ok: false,
+          message: "No nonce found. Please request a new nonce first."
+        }
+      }
+
+      // Verify the signature matches the expected address
+      const isValid = await this.verifySignature({
+        message,
+        signature,
+        expectedAddress: address
+      })
+
+      // Clear nonce after verification attempt
+      this.clearNonce()
+
+      if (!isValid) {
+        return {
+          ok: false,
+          message: "Invalid signature."
+        }
+      }
+
+      // Store successful authentication
+      const sessionData: SessionData = {
+        isAuthenticated: true,
+        address,
+        chainId,
+        expirationTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(), // 1 week
+        signature,
+        message
+      }
+
+      this.storeSession(sessionData)
+
+      return {
+        ok: true,
+        user: {
+          isAuthenticated: true,
+          address,
+          chainId,
+          expirationTime: sessionData.expirationTime
+        }
+      }
+
+    } catch (error) {
+      console.error("SIWE authentication error:", error)
+      return {
+        ok: false,
+        message: "Authentication failed. Please try again."
+      }
+    }
+  }
+
+  /**
+   * Initialize SIWE authentication process
+   * Returns nonce and message to be signed
+   */
+  static initializeAuth(address: Address, chainId: number): { nonce: string; message: string } {
+    const nonce = this.generateNonce()
+    this.storeNonce(nonce)
+    
+    const message = this.createSiweMessage({
+      address,
+      chainId,
+      nonce
+    })
+
+    return { nonce, message }
+  }
+
+  /**
+   * Logout user and clear all session data
+   */
+  static logout(): AuthResponse {
+    try {
+      this.clearSession()
+      return {
+        ok: true,
+        message: "Successfully logged out"
+      }
+    } catch (error) {
+      console.error("SIWE logout error:", error)
+      return {
+        ok: false,
+        message: "Failed to logout. Please try again."
+      }
+    }
+  }
+}
+
+// Export convenience functions
+export const {
+  generateNonce,
+  createSiweMessage,
+  getCurrentUser,
+  authenticate,
+  initializeAuth,
+  logout,
+  isSessionValid,
+  getSession,
+  clearSession
+} = SiweUserManager
+
+// Default export
+export default SiweUserManager
+{/*
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { SiweMessage } from 'https://esm.sh/siwe@2.1.4'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -209,3 +556,5 @@ serve(async (req) => {
     )
   }
 })
+
+*/}
