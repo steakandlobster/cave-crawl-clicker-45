@@ -3,14 +3,19 @@ import { SiweMessage } from 'npm:siwe'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 // CORS helpers
+const ALLOWED_ORIGINS = [
+  'https://preview--cave-crawl-clicker-45.lovable.app',
+  'http://localhost:5173',
+  'https://localhost:5173',
+]
+
 function getAllowedOrigin(req: Request) {
-  const origin = req.headers.get('origin')
-  if (origin) return origin
-  const referer = req.headers.get('referer')
-  try {
-    if (referer) return new URL(referer).origin
-  } catch {}
-  return '*'
+  const origin = req.headers.get('origin') || ''
+  const referer = req.headers.get('referer') || ''
+  let candidate = origin || (referer ? (() => { try { return new URL(referer).origin } catch { return '' } })() : '')
+  if (candidate && ALLOWED_ORIGINS.includes(candidate)) return candidate
+  // Fallback to the first allowed origin to avoid using '*'
+  return ALLOWED_ORIGINS[0]
 }
 
 function getCorsHeaders(req: Request) {

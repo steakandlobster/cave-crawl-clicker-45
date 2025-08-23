@@ -90,13 +90,8 @@ export function useSiweAuth() {
         message: messageString,
       });
 
-      // Ensure we have a Supabase session (anonymous is fine) and verify signature
-      let { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously();
-        if (anonErr) throw new Error(anonErr.message || 'Failed to establish session');
-        session = anon.session;
-      }
+      // Include Supabase JWT if already signed in (must not be anonymous)
+      const { data: { session } } = await supabase.auth.getSession();
       const verifyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
       if (session?.access_token) verifyHeaders['Authorization'] = `Bearer ${session.access_token}`;
 
