@@ -4,12 +4,27 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 // CORS helpers
 function getAllowedOrigin(req) {
   const origin = req.headers.get('origin');
-  if (origin) return origin;
+  const allowedOrigins = [
+    'https://preview--cave-crawl-clicker-45.lovable.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin;
+  }
+  
   const referer = req.headers.get('referer');
   try {
-    if (referer) return new URL(referer).origin;
-  } catch  {}
-  return '*';
+    if (referer) {
+      const refererOrigin = new URL(referer).origin;
+      if (allowedOrigins.includes(refererOrigin)) {
+        return refererOrigin;
+      }
+    }
+  } catch {}
+  
+  return allowedOrigins[0]; // Default to the main app URL
 }
 function getCorsHeaders(req) {
   const allowedOrigin = getAllowedOrigin(req);
