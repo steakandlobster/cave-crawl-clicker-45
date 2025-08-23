@@ -2,10 +2,37 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  'https://preview--cave-crawl-clicker-45.lovable.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://cave-crawl-clicker-45.lovable.app'
+];
+
+function getAllowedOrigin(req: Request) {
+  const origin = req.headers.get('origin');
+  if (origin && ALLOWED_ORIGINS.includes(origin)) return origin;
+  const referer = req.headers.get('referer');
+  try {
+    if (referer) {
+      const refererOrigin = new URL(referer).origin;
+      if (ALLOWED_ORIGINS.includes(refererOrigin)) return refererOrigin;
+    }
+  } catch {}
+  return ALLOWED_ORIGINS[0];
+}
+
+function getCorsHeaders(req: Request) {
+  const allowedOrigin = getAllowedOrigin(req);
+  const requestedHeaders = req.headers.get('access-control-request-headers') || 'authorization, x-client-info, apikey, content-type, cookie';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': requestedHeaders,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
+  };
+}
 
 const SUPABASE_URL = "https://aegayadckentahcljxhf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlZ2F5YWRja2VudGFoY2xqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NDA5NzUsImV4cCI6MjA3MTIxNjk3NX0.9iBkfyED3zOP5XWcwcheLgp7Ut7lGUHhLCjBhTDFulU";
@@ -31,7 +58,7 @@ function mulberry32(a: number) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -54,7 +81,7 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Not authenticated" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -125,13 +152,13 @@ serve(async (req) => {
         max_rounds,
         username: profile?.username || "Explorer",
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (e) {
     console.error("start-game error", e);
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
