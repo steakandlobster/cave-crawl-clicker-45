@@ -108,6 +108,21 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
+      // Require Supabase JWT before SIWE verification
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: req.headers.get('Authorization') || '' } } }
+      )
+      const bearer = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || undefined
+      const { data: authData, error: authErr } = await supabase.auth.getUser(bearer)
+      if (authErr || !authData?.user) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Unauthorized' }),
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+        )
+      }
+
       // Verify SIWE and bootstrap a Supabase session via magic link OTP
       const { message, signature } = await req.json()
       if (!message || !signature) {

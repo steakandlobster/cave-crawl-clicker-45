@@ -90,11 +90,20 @@ export function useSiweAuth() {
         message: messageString,
       });
 
-      // Verify signature and bootstrap Supabase session via OTP
+      // Ensure we have a Supabase session (anonymous is fine) and verify signature
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously();
+        if (anonErr) throw new Error(anonErr.message || 'Failed to establish session');
+        session = anon.session;
+      }
+      const verifyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) verifyHeaders['Authorization'] = `Bearer ${session.access_token}`;
+
       const verifyResponse = await fetch(`${SIWE_API_BASE}/siwe-user`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: verifyHeaders,
         body: JSON.stringify({ message: messageString, signature }),
       });
 
