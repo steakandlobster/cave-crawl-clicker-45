@@ -223,10 +223,49 @@ serve(async (req)=>{
         });
       }
       try {
-        const result = await siweMessage.verify({
-          signature: normalizedSignature
-        });
-        if (!result.success) {
+        // Try verification with normalized signature first
+        let verified = false;
+        try {
+          const res = await siweMessage.verify({ signature: normalizedSignature });
+          verified = !!res.success;
+        } catch (_) {}
+
+        // If that fails, attempt to extract a valid 65-byte signature from wrapped/ABI-encoded inputs
+        if (!verified && typeof signature === 'string') {
+          const rawHex = signature.startsWith('0x') ? signature.slice(2) : signature;
+          const candidates = new Set<string>();
+
+          // 65-byte candidates (130 hex chars)
+          for (let i = 0; i <= rawHex.length - 130; i += 2) {
+            const candidate = rawHex.slice(i, i + 130);
+            const lastByte = candidate.slice(-2).toLowerCase();
+            if (['1b', '1c', '00', '01'].includes(lastByte)) {
+              candidates.add('0x' + candidate);
+            }
+          }
+
+          // 64-byte candidates (append common recovery IDs)
+          for (let i = 0; i <= rawHex.length - 128; i += 2) {
+            const cand64 = rawHex.slice(i, i + 128);
+            for (const v of ['1b', '1c']) {
+              candidates.add('0x' + cand64 + v);
+            }
+          }
+
+          for (const cand of candidates) {
+            try {
+              const res = await siweMessage.verify({ signature: cand });
+              if (res.success) {
+                verified = true;
+                break;
+              }
+            } catch (_) {
+              // continue trying candidates
+            }
+          }
+        }
+
+        if (!verified) {
           return new Response(JSON.stringify({
             ok: false,
             error: 'Invalid signature'
