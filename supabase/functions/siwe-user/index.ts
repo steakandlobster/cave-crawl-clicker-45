@@ -43,31 +43,64 @@ function getCookie(req, name) {
 function normalizeSignature(sig) {
   if (!sig) return sig;
   let hex = sig.startsWith('0x') ? sig.slice(2) : sig;
+  
   // Raw 65-byte signature is 130 hex chars
   if (hex.length === 130) return '0x' + hex;
+  
   const MAGIC_6492 = '6492649264926492649264926492649264926492649264926492649264926492';
+  
   try {
     if (hex.length > 130) {
-      // Try ABI-encoded dynamic bytes: [offset(32)][len(32)][data(len)][padding]
-      const lenWord = hex.slice(64, 128);
-      const length = parseInt(lenWord, 16);
-      if (length === 65 || length === 64) {
-        const dataStart = 128;
-        const dataEnd = dataStart + length * 2;
-        const sigData = hex.slice(dataStart, dataEnd);
-        if (sigData.length === 130 || sigData.length === 128) {
-          if (sigData.length === 128) return '0x' + sigData + '1b';
-          return '0x' + sigData;
+      // Handle ABI-encoded dynamic bytes: [offset(32)][len(32)][data(len)][padding]
+      // First try: offset at position 0, length at position 64
+      if (hex.length >= 128) {
+        const offsetWord = hex.slice(0, 64);
+        const offset = parseInt(offsetWord, 16);
+        
+        // If offset points to position 64 (0x40), this is standard ABI encoding
+        if (offset === 64 && hex.length >= 128) {
+          const lenWord = hex.slice(64, 128);
+          const length = parseInt(lenWord, 16);
+          
+          // Standard signature lengths: 65 bytes (130 hex chars) or 64 bytes (128 hex chars)
+          if ((length === 65 || length === 64) && hex.length >= 128 + length * 2) {
+            const dataStart = 128;
+            const dataEnd = dataStart + length * 2;
+            const sigData = hex.slice(dataStart, dataEnd);
+            
+            if (sigData.length === 130) {
+              return '0x' + sigData;
+            } else if (sigData.length === 128) {
+              // 64-byte signature, add recovery ID
+              return '0x' + sigData + '1b';
+            }
+          }
         }
       }
-      // Fallback: if 6492 magic is present, take 65 bytes before it
+      
+      // Fallback: Look for ERC-6492 magic bytes and extract signature before them
       const markerIndex = hex.indexOf(MAGIC_6492);
       if (markerIndex > 130) {
         const sigData = hex.slice(markerIndex - 130, markerIndex);
         if (sigData.length === 130) return '0x' + sigData;
       }
+      
+      // Last resort: if signature is way too long, try to find a 65-byte sequence
+      if (hex.length > 200) {
+        // Look for patterns that might be signatures (start with common recovery IDs)
+        for (let i = 0; i <= hex.length - 130; i += 2) {
+          const candidate = hex.slice(i, i + 130);
+          const lastByte = candidate.slice(-2);
+          if (['1b', '1c', '00', '01'].includes(lastByte)) {
+            return '0x' + candidate;
+          }
+        }
+      }
     }
-  } catch (_) {}
+  } catch (e) {
+    console.error('Error normalizing signature:', e);
+  }
+  
   return sig;
 }
 serve(async (req)=>{
