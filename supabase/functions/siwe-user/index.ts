@@ -3,29 +3,24 @@ import { SiweMessage } from 'npm:siwe';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 // CORS helpers
 function getAllowedOrigin(req) {
-  const origin = req.headers.get('origin');
-  // List of allowed origins for your app
+  const rawOrigin = req.headers.get('origin');
+  let origin = rawOrigin;
+  if (!origin) {
+    const referer = req.headers.get('referer');
+    try {
+      if (referer) origin = new URL(referer).origin;
+    } catch {}
+  }
   const allowedOrigins = [
     'https://preview--cave-crawl-clicker-45.lovable.app',
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://cave-crawl-clicker-45.lovable.app' // Production domain if different
+    'https://cave-crawl-clicker-45.lovable.app'
   ];
-  // If origin is in allowed list, return it
-  if (origin && allowedOrigins.includes(origin)) {
+  const isAllowedPattern = (o) => typeof o === 'string' && (o.endsWith('.lovable.app') || o.endsWith('.sandbox.lovable.dev'));
+  if (origin && (allowedOrigins.includes(origin) || isAllowedPattern(origin))) {
     return origin;
   }
-  // Fallback: try to get from referer
-  const referer = req.headers.get('referer');
-  try {
-    if (referer) {
-      const refererOrigin = new URL(referer).origin;
-      if (allowedOrigins.includes(refererOrigin)) {
-        return refererOrigin;
-      }
-    }
-  } catch  {}
-  // Default to first allowed origin instead of '*' when credentials are used
   return allowedOrigins[0];
 }
 function getCorsHeaders(req) {

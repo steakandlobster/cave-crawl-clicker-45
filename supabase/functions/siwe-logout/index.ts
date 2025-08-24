@@ -1,13 +1,23 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 function getAllowedOrigin(req: Request) {
-  const origin = req.headers.get('origin');
-  if (origin) return origin;
-  const referer = req.headers.get('referer');
-  try {
-    if (referer) return new URL(referer).origin;
-  } catch {}
-  return 'https://preview--cave-crawl-clicker-45.lovable.app';
+  const rawOrigin = req.headers.get('origin');
+  let origin = rawOrigin;
+  if (!origin) {
+    const referer = req.headers.get('referer');
+    try {
+      if (referer) origin = new URL(referer).origin;
+    } catch {}
+  }
+  const allowedOrigins = [
+    'https://preview--cave-crawl-clicker-45.lovable.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://cave-crawl-clicker-45.lovable.app',
+  ];
+  const isAllowedPattern = (o: string) => o.endsWith('.lovable.app') || o.endsWith('.sandbox.lovable.dev');
+  if (origin && (allowedOrigins.includes(origin) || isAllowedPattern(origin))) return origin;
+  return allowedOrigins[0];
 }
 function getCorsHeaders(req: Request) {
   const allowedOrigin = getAllowedOrigin(req);

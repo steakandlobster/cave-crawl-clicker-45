@@ -24,6 +24,11 @@ export function useSiweAuth() {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      // If there's no Supabase session yet, skip the GET call to avoid a 401 noise
+      if (!session?.access_token) {
+        setAuthData(null);
+        return;
+      }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
