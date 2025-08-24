@@ -189,13 +189,27 @@ serve(async (req)=>{
           }
         });
       }
-      const result = await siweMessage.verify({
-        signature: normalizedSignature
-      });
-      if (!result.success) {
+      try {
+        const result = await siweMessage.verify({
+          signature: normalizedSignature
+        });
+        if (!result.success) {
+          return new Response(JSON.stringify({
+            ok: false,
+            error: 'Invalid signature'
+          }), {
+            status: 401,
+            headers: {
+              ...getCorsHeaders(req),
+              'Content-Type': 'application/json'
+            }
+          });
+        }
+      } catch (e) {
+        console.error('SIWE verify threw:', e);
         return new Response(JSON.stringify({
           ok: false,
-          error: 'Invalid signature'
+          error: 'Invalid signature format'
         }), {
           status: 401,
           headers: {
