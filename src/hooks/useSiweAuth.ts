@@ -104,7 +104,11 @@ export function useSiweAuth() {
         method: 'POST',
         credentials: 'include',
         headers: verifyHeaders,
-        body: JSON.stringify({ message: messageString, signature }),
+        body: JSON.stringify({ 
+          message: messageString, 
+          signature,
+          address 
+        }),
       });
 
       const verifyText = await verifyResponse.text();
