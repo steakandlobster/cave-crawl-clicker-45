@@ -57,6 +57,12 @@ export function useSiweAuth() {
     }
   }, [isConnected]);
 
+  // Generate a random nonce
+  const generateNonce = () => {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
+  };
+
   // Sign in with SIWE
   const signIn = useCallback(async () => {
     if (isAuthenticating) return;
@@ -71,38 +77,46 @@ export function useSiweAuth() {
         throw new Error('Wallet not connected');
       }
 
-      // Get nonce
-      const nonceResponse = await fetch(`${SIWE_API_BASE}/siwe-nonce`, {
+      // Generate and set nonce on server
+      const nonce = generateNonce();
+      const nonceResponse = await fetch(`${SIWE_API_BASE}/siwe-user/nonce`, {
+        method: 'POST',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nonce }),
       });
+
       const nonceText = await nonceResponse.text();
       let nonceJson: any = null;
       try { nonceJson = nonceText ? JSON.parse(nonceText) : null; } catch {}
-      console.log('[SIWE] /siwe-nonce status:', nonceResponse.status, 'body:', nonceText);
+      console.log('[SIWE] /nonce status:', nonceResponse.status, 'body:', nonceText);
 
-      if (!nonceResponse.ok || !nonceJson?.nonce) {
-        throw new Error(`Failed to get nonce (status ${nonceResponse.status})`);
+      if (!nonceResponse.ok || !nonceJson?.ok) {
+        throw new Error(`Failed to set nonce (status ${nonceResponse.status}): ${nonceJson?.error || 'Unknown error'}`);
       }
-
-      const { nonce } = nonceJson;
 
       // Create SIWE message
       const message = createSiweMessage(address, chainId, nonce);
       const messageString = message.prepareMessage();
 
-// Sign message using ethers.js for a raw ECDSA signature
-let signature: string;
-try {
-  const provider = new ethers.providers.Web3Provider((window as any).ethereum, 'any');
-  const signer = provider.getSigner();
-  signature = await signer.signMessage(messageString);
-} catch (e) {
-  // Fallback to wagmi if ethers fails
-  signature = await signMessageAsync({
-    account: address as `0x${string}`,
-    message: messageString,
-  });
-}
+      // Sign message using ethers.js for a raw ECDSA signature
+      let signature: string;
+      try {
+        const provider = new ethers.providers.Web3Provider((window as any).ethereum, 'any');
+        const signer = provider.getSigner();
+        signature = await signer.signMessage(messageString);
+        console.log('[SIWE] Raw signature from ethers:', signature);
+      } catch (e) {
+        console.log('[SIWE] Ethers failed, trying wagmi:', e);
+        // Fallback to wagmi if ethers fails
+        signature = await signMessageAsync({
+          account: address as `0x${string}`,
+          message: messageString,
+        });
+        console.log('[SIWE] Raw signature from wagmi:', signature);
+      }
 
       // Include Supabase JWT if already signed in (must not be anonymous)
       const { data: { session } } = await supabase.auth.getSession();
