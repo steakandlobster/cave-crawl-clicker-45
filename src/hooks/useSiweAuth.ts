@@ -4,6 +4,7 @@ import { createSiweMessage } from '@/lib/siwe';
 import { SiweAuthData } from '@/types/siwe';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ethers } from 'ethers';
 
 const SIWE_API_BASE = 'https://aegayadckentahcljxhf.supabase.co/functions/v1';
 
@@ -89,11 +90,19 @@ export function useSiweAuth() {
       const message = createSiweMessage(address, chainId, nonce);
       const messageString = message.prepareMessage();
 
-      // Sign message
-      const signature = await signMessageAsync({
-        account: address as `0x${string}`,
-        message: messageString,
-      });
+// Sign message using ethers.js for a raw ECDSA signature
+let signature: string;
+try {
+  const provider = new ethers.providers.Web3Provider((window as any).ethereum, 'any');
+  const signer = provider.getSigner();
+  signature = await signer.signMessage(messageString);
+} catch (e) {
+  // Fallback to wagmi if ethers fails
+  signature = await signMessageAsync({
+    account: address as `0x${string}`,
+    message: messageString,
+  });
+}
 
       // Include Supabase JWT if already signed in (must not be anonymous)
       const { data: { session } } = await supabase.auth.getSession();
