@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { SiweMessage } from 'npm:siwe';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createPublicClient, http, isAddress, toHex } from 'npm:viem';
+import { abstractTestnet } from 'npm:viem/chains';
 // CORS helpers
 function getAllowedOrigin(req) {
   const rawOrigin = req.headers.get('origin');
@@ -307,6 +309,84 @@ serve(async (req)=>{
             } catch (_) {
               // continue trying candidates
             }
+          }
+        }
+
+        // If still not verified, try ERC-1271 for smart contract wallets (AGW)
+        if (!verified && isAddress(siweMessage.address) && siweMessage.chainId === 11124) {
+          console.log('[SIWE] Attempting ERC-1271 verification for contract wallet:', siweMessage.address);
+          
+          try {
+            const publicClient = createPublicClient({
+              chain: abstractTestnet,
+              transport: http('https://api.testnet.abs.xyz')
+            });
+
+            // ERC-1271 standard function selector for isValidSignature
+            const ERC1271_MAGIC_VALUE = '0x1626ba7e';
+            
+            // Hash the message as SIWE library would
+            const messageHash = siweMessage.messageHash();
+            
+            // Try with original signature first
+            try {
+              const result = await publicClient.readContract({
+                address: siweMessage.address as `0x${string}`,
+                abi: [
+                  {
+                    name: 'isValidSignature',
+                    type: 'function',
+                    inputs: [
+                      { name: '_hash', type: 'bytes32' },
+                      { name: '_signature', type: 'bytes' }
+                    ],
+                    outputs: [{ name: '', type: 'bytes4' }],
+                    stateMutability: 'view'
+                  }
+                ],
+                functionName: 'isValidSignature',
+                args: [messageHash as `0x${string}`, signature as `0x${string}`]
+              });
+              
+              if (result === ERC1271_MAGIC_VALUE) {
+                console.log('[SIWE] ERC-1271 verification succeeded with original signature');
+                verified = true;
+              }
+            } catch (erc1271Error) {
+              console.log('[SIWE] ERC-1271 verification failed with original signature:', erc1271Error.message);
+              
+              // If original signature fails, try with normalized signature
+              if (normalizedSignature !== signature) {
+                try {
+                  const result = await publicClient.readContract({
+                    address: siweMessage.address as `0x${string}`,
+                    abi: [
+                      {
+                        name: 'isValidSignature',
+                        type: 'function',
+                        inputs: [
+                          { name: '_hash', type: 'bytes32' },
+                          { name: '_signature', type: 'bytes' }
+                        ],
+                        outputs: [{ name: '', type: 'bytes4' }],
+                        stateMutability: 'view'
+                      }
+                    ],
+                    functionName: 'isValidSignature',
+                    args: [messageHash as `0x${string}`, normalizedSignature as `0x${string}`]
+                  });
+                  
+                  if (result === ERC1271_MAGIC_VALUE) {
+                    console.log('[SIWE] ERC-1271 verification succeeded with normalized signature');
+                    verified = true;
+                  }
+                } catch (normalizedError) {
+                  console.log('[SIWE] ERC-1271 verification failed with normalized signature:', normalizedError.message);
+                }
+              }
+            }
+          } catch (clientError) {
+            console.error('[SIWE] ERC-1271 client setup error:', clientError);
           }
         }
 
