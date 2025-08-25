@@ -127,14 +127,22 @@ export function useSiweAuth() {
       console.log('[SIWE] Is Privy provider:', isPrivyProvider);
       
       try {
-        // For Privy + AGW or direct AGW, use wagmi (it handles the complexity)
-        if (isPrivyProvider || (ethereum && ethereum.isAbstractGlobalWallet) || chainId === 11124) {
-          console.log('[SIWE] Using wagmi for AGW/Privy signing...');
+        // For Abstract testnet (AGW), always use wagmi as it handles the complexity better
+        if (chainId === 11124) {
+          console.log('[SIWE] Abstract testnet detected, using wagmi for AGW signing...');
           signature = await signMessageAsync({
             account: address as `0x${string}`,
             message: messageString,
           });
-          console.log('[SIWE] AGW/Privy signature from wagmi:', signature);
+          console.log('[SIWE] AGW signature from wagmi - length:', signature.length);
+          console.log('[SIWE] AGW signature preview:', signature.slice(0, 50) + '...');
+        } else if (isPrivyProvider) {
+          console.log('[SIWE] Using wagmi for Privy signing...');
+          signature = await signMessageAsync({
+            account: address as `0x${string}`,
+            message: messageString,
+          });
+          console.log('[SIWE] Privy signature from wagmi:', signature);
         } else if (ethereum) {
           // Try standard methods for other wallets
           console.log('[SIWE] Using standard signing methods...');
@@ -153,101 +161,4 @@ export function useSiweAuth() {
           }
         } else {
           // No ethereum object, use wagmi directly
-          console.log('[SIWE] No ethereum object, using wagmi directly...');
-          signature = await signMessageAsync({
-            account: address as `0x${string}`,
-            message: messageString,
-          });
-          console.log('[SIWE] Direct wagmi signature:', signature);
-        }
-      } catch (signingError) {
-        console.error('[SIWE] All signing methods failed:', signingError);
-        throw new Error('Failed to sign message with wallet');
-      }
-
-      // Log signature details for debugging
-      console.log('[SIWE] Final signature length:', signature.length);
-      console.log('[SIWE] Signature starts with 0x:', signature.startsWith('0x'));
-      
-      // Include Supabase JWT if already signed in
-      const { data: { session } } = await supabase.auth.getSession();
-      const verifyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (session?.access_token) verifyHeaders['Authorization'] = `Bearer ${session.access_token}`;
-
-      const verifyResponse = await fetch(`${SIWE_API_BASE}/siwe-user`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: verifyHeaders,
-        body: JSON.stringify({ 
-          message: messageString, 
-          signature,
-          address,
-          chainId // Include chainId for additional validation
-        }),
-      });
-
-      const verifyText = await verifyResponse.text();
-      let verifyJson: any = null;
-      try { verifyJson = verifyText ? JSON.parse(verifyText) : null; } catch {}
-      console.log('[SIWE] /siwe-user (POST) status:', verifyResponse.status, 'body:', verifyText);
-
-      if (!verifyResponse.ok || !verifyJson?.ok) {
-        throw new Error(verifyJson?.error || `Failed to verify (status ${verifyResponse.status})`);
-      }
-
-      // Exchange OTP for a Supabase session
-      const { email, emailOtp } = verifyJson;
-      const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
-        email,
-        token: emailOtp,
-        type: 'email',
-      });
-      if (verifyErr) {
-        throw new Error(verifyErr.message || 'Failed to create Supabase session');
-      }
-
-      await checkAuthStatus();
-      toast.success('Successfully authenticated!');
-    } catch (error: any) {
-      console.error('[SIWE] Sign in error:', error);
-      toast.error(error?.message || 'Failed to sign in');
-    } finally {
-      setIsAuthenticating(false);
-    }
-  }, [address, chainId, isAuthenticating, signMessageAsync, checkAuthStatus]);
-
-  // Sign out
-  const signOut = useCallback(async () => {
-    try {
-      const res = await fetch(`${SIWE_API_BASE}/siwe-logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const text = await res.text();
-      await supabase.auth.signOut();
-      setAuthData(null);
-      toast.success('Signed out successfully');
-    } catch (error) {
-      console.error('[SIWE] Sign out error:', error);
-      toast.error('Failed to sign out');
-    }
-  }, []);
-
-  // Check auth status on connection change
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
-
-  const isAuthenticated = Boolean((authData as any)?.ok && ((authData as any)?.user?.id || (authData as any)?.user?.isAuthenticated));
-
-  return {
-    authData,
-    isLoading,
-    isAuthenticating,
-    isAuthenticated,
-    signIn,
-    signOut,
-    checkAuthStatus,
-  };
-}
-      
+          console.log('[
