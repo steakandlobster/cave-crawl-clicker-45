@@ -109,10 +109,13 @@ export function useSiweAuth() {
 
       // Sign message - try AGW-specific method first, then fallback
       let signature: string;
+      const ethereum = (window as any).ethereum;
+      
+      console.log('[SIWE] Ethereum object available:', !!ethereum);
+      console.log('[SIWE] Is AGW:', ethereum?.isAbstractGlobalWallet);
+      console.log('[SIWE] Chain ID from wallet:', ethereum?.chainId);
+      
       try {
-        // For AGW, try using eth_signTypedData_v4 or personal_sign with specific parameters
-        const ethereum = (window as any).ethereum;
-        
         if (ethereum && ethereum.isAbstractGlobalWallet) {
           console.log('[SIWE] Using AGW-specific signing...');
           // Try personal_sign first (AGW might handle this better)
@@ -124,14 +127,23 @@ export function useSiweAuth() {
             console.log('[SIWE] AGW signature obtained:', signature);
           } catch (agwError) {
             console.log('[SIWE] AGW personal_sign failed, trying eth_sign:', agwError);
-            signature = await ethereum.request({
-              method: 'eth_sign',
-              params: [address, ethers.utils.hexlify(ethers.utils.toUtf8Bytes(messageString))],
-            });
-            console.log('[SIWE] AGW eth_sign signature:', signature);
+            try {
+              signature = await ethereum.request({
+                method: 'eth_sign',
+                params: [address, ethers.utils.hexlify(ethers.utils.toUtf8Bytes(messageString))],
+              });
+              console.log('[SIWE] AGW eth_sign signature:', signature);
+            } catch (ethSignError) {
+              console.log('[SIWE] AGW eth_sign also failed, falling back to wagmi:', ethSignError);
+              signature = await signMessageAsync({
+                account: address as `0x${string}`,
+                message: messageString,
+              });
+              console.log('[SIWE] AGW fallback signature from wagmi:', signature);
+            }
           }
-        } else {
-          // Fallback to standard methods
+        } else if (ethereum) {
+          // Try standard methods if ethereum exists but not AGW
           console.log('[SIWE] Using standard signing methods...');
           try {
             const provider = new ethers.providers.Web3Provider(ethereum, 'any');
@@ -146,6 +158,14 @@ export function useSiweAuth() {
             });
             console.log('[SIWE] Standard signature from wagmi:', signature);
           }
+        } else {
+          // No ethereum object, use wagmi directly
+          console.log('[SIWE] No ethereum object, using wagmi directly...');
+          signature = await signMessageAsync({
+            account: address as `0x${string}`,
+            message: messageString,
+          });
+          console.log('[SIWE] Direct wagmi signature:', signature);
         }
       } catch (signingError) {
         console.error('[SIWE] All signing methods failed:', signingError);
