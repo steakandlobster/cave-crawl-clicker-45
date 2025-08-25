@@ -4,6 +4,7 @@ import { createSiweMessage } from '@/lib/siwe';
 import { SiweAuthData } from '@/types/siwe';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ethers } from 'ethers';
 
 const SIWE_API_BASE = 'https://aegayadckentahcljxhf.supabase.co/functions/v1';
 
@@ -24,6 +25,7 @@ export function useSiweAuth() {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      // If there's no Supabase session yet, skip the GET call to avoid a 401 noise
       if (!session?.access_token) {
         setAuthData(null);
         return;
@@ -61,37 +63,24 @@ export function useSiweAuth() {
            Math.random().toString(36).substring(2, 15);
   };
 
-  // Sign message with AGW-compatible approach
-  const signMessageWithAGW = async (messageString: string, walletAddress: string) => {
-    console.log('[SIWE] Attempting to sign with AGW-compatible method');
-    
-    try {
-      // Try wagmi first (which should work with AGW)
-      const signature = await signMessageAsync({
-        account: walletAddress as `0x${string}`,
-        message: messageString,
-      });
-      
-      console.log('[SIWE] AGW signature obtained:', signature);
-      return signature;
-    } catch (error) {
-      console.error('[SIWE] AGW signing failed:', error);
-      throw error;
-    }
-  };
-
   // Sign in with SIWE
   const signIn = useCallback(async () => {
     if (isAuthenticating) return;
 
     setIsAuthenticating(true);
     try {
+      // Ensure wallet is connected before proceeding
+      if (!isConnected && typeof window !== 'undefined' && (window as any).ethereum) {
+        await (window as any).ethereum.request?.({ method: 'eth_requestAccounts' });
+      }
       if (!address || !chainId) {
         throw new Error('Wallet not connected');
       }
 
-      console.log('[SIWE] Starting sign-in process for AGW address:', address);
-      console.log('[SIWE] Chain ID:', chainId);
+      // Verify we're on Abstract testnet
+      if (chainId !== 11124) {
+        throw new Error('Please switch to Abstract testnet (Chain ID: 11124)');
+      }
 
       // Generate and set nonce on server
       const nonce = generateNonce();
@@ -116,14 +105,58 @@ export function useSiweAuth() {
       // Create SIWE message
       const message = createSiweMessage(address, chainId, nonce);
       const messageString = message.prepareMessage();
+      console.log('[SIWE] Message to sign:', messageString);
 
-      console.log('[SIWE] SIWE message created for AGW wallet');
-      console.log('[SIWE] Message preview:', messageString.slice(0, 100) + '...');
+      // Sign message - try AGW-specific method first, then fallback
+      let signature: string;
+      try {
+        // For AGW, try using eth_signTypedData_v4 or personal_sign with specific parameters
+        const ethereum = (window as any).ethereum;
+        
+        if (ethereum && ethereum.isAbstractGlobalWallet) {
+          console.log('[SIWE] Using AGW-specific signing...');
+          // Try personal_sign first (AGW might handle this better)
+          try {
+            signature = await ethereum.request({
+              method: 'personal_sign',
+              params: [messageString, address],
+            });
+            console.log('[SIWE] AGW signature obtained:', signature);
+          } catch (agwError) {
+            console.log('[SIWE] AGW personal_sign failed, trying eth_sign:', agwError);
+            signature = await ethereum.request({
+              method: 'eth_sign',
+              params: [address, ethers.utils.hexlify(ethers.utils.toUtf8Bytes(messageString))],
+            });
+            console.log('[SIWE] AGW eth_sign signature:', signature);
+          }
+        } else {
+          // Fallback to standard methods
+          console.log('[SIWE] Using standard signing methods...');
+          try {
+            const provider = new ethers.providers.Web3Provider(ethereum, 'any');
+            const signer = provider.getSigner();
+            signature = await signer.signMessage(messageString);
+            console.log('[SIWE] Standard signature from ethers:', signature);
+          } catch (ethersError) {
+            console.log('[SIWE] Ethers failed, trying wagmi:', ethersError);
+            signature = await signMessageAsync({
+              account: address as `0x${string}`,
+              message: messageString,
+            });
+            console.log('[SIWE] Standard signature from wagmi:', signature);
+          }
+        }
+      } catch (signingError) {
+        console.error('[SIWE] All signing methods failed:', signingError);
+        throw new Error('Failed to sign message with wallet');
+      }
 
-      // Sign message using AGW-compatible method
-      const signature = await signMessageWithAGW(messageString, address);
-
-      // Send verification request
+      // Log signature details for debugging
+      console.log('[SIWE] Final signature length:', signature.length);
+      console.log('[SIWE] Signature starts with 0x:', signature.startsWith('0x'));
+      
+      // Include Supabase JWT if already signed in
       const { data: { session } } = await supabase.auth.getSession();
       const verifyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
       if (session?.access_token) verifyHeaders['Authorization'] = `Bearer ${session.access_token}`;
@@ -136,7 +169,7 @@ export function useSiweAuth() {
           message: messageString, 
           signature,
           address,
-          walletType: 'agw' // Indicate this is an AGW wallet
+          chainId // Include chainId for additional validation
         }),
       });
 
@@ -161,10 +194,10 @@ export function useSiweAuth() {
       }
 
       await checkAuthStatus();
-      toast.success('Successfully authenticated with Abstract Global Wallet!');
+      toast.success('Successfully authenticated!');
     } catch (error: any) {
       console.error('[SIWE] Sign in error:', error);
-      toast.error(error?.message || 'Failed to sign in with AGW');
+      toast.error(error?.message || 'Failed to sign in');
     } finally {
       setIsAuthenticating(false);
     }
@@ -177,6 +210,7 @@ export function useSiweAuth() {
         method: 'POST',
         credentials: 'include',
       });
+      const text = await res.text();
       await supabase.auth.signOut();
       setAuthData(null);
       toast.success('Signed out successfully');
@@ -203,3 +237,4 @@ export function useSiweAuth() {
     checkAuthStatus,
   };
 }
+      
