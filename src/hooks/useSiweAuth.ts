@@ -107,43 +107,36 @@ export function useSiweAuth() {
       const messageString = message.prepareMessage();
       console.log('[SIWE] Message to sign:', messageString);
 
-      // Sign message - try AGW-specific method first, then fallback
+      // Sign message - detect wallet type and use appropriate method
       let signature: string;
       const ethereum = (window as any).ethereum;
       
       console.log('[SIWE] Ethereum object available:', !!ethereum);
+      console.log('[SIWE] Ethereum constructor name:', ethereum?.constructor?.name);
       console.log('[SIWE] Is AGW:', ethereum?.isAbstractGlobalWallet);
       console.log('[SIWE] Chain ID from wallet:', ethereum?.chainId);
+      console.log('[SIWE] Connected address:', address);
+      console.log('[SIWE] Connected chainId:', chainId);
+      
+      // Check if we're using Privy (which wraps AGW)
+      const isPrivyProvider = ethereum?.constructor?.name === 'PrivyWalletProvider' || 
+                             ethereum?._provider?.constructor?.name === 'PrivyWalletProvider' ||
+                             typeof (ethereum as any)?.request === 'function' && 
+                             JSON.stringify(ethereum).includes('privy');
+      
+      console.log('[SIWE] Is Privy provider:', isPrivyProvider);
       
       try {
-        if (ethereum && ethereum.isAbstractGlobalWallet) {
-          console.log('[SIWE] Using AGW-specific signing...');
-          // Try personal_sign first (AGW might handle this better)
-          try {
-            signature = await ethereum.request({
-              method: 'personal_sign',
-              params: [messageString, address],
-            });
-            console.log('[SIWE] AGW signature obtained:', signature);
-          } catch (agwError) {
-            console.log('[SIWE] AGW personal_sign failed, trying eth_sign:', agwError);
-            try {
-              signature = await ethereum.request({
-                method: 'eth_sign',
-                params: [address, ethers.utils.hexlify(ethers.utils.toUtf8Bytes(messageString))],
-              });
-              console.log('[SIWE] AGW eth_sign signature:', signature);
-            } catch (ethSignError) {
-              console.log('[SIWE] AGW eth_sign also failed, falling back to wagmi:', ethSignError);
-              signature = await signMessageAsync({
-                account: address as `0x${string}`,
-                message: messageString,
-              });
-              console.log('[SIWE] AGW fallback signature from wagmi:', signature);
-            }
-          }
+        // For Privy + AGW or direct AGW, use wagmi (it handles the complexity)
+        if (isPrivyProvider || (ethereum && ethereum.isAbstractGlobalWallet) || chainId === 11124) {
+          console.log('[SIWE] Using wagmi for AGW/Privy signing...');
+          signature = await signMessageAsync({
+            account: address as `0x${string}`,
+            message: messageString,
+          });
+          console.log('[SIWE] AGW/Privy signature from wagmi:', signature);
         } else if (ethereum) {
-          // Try standard methods if ethereum exists but not AGW
+          // Try standard methods for other wallets
           console.log('[SIWE] Using standard signing methods...');
           try {
             const provider = new ethers.providers.Web3Provider(ethereum, 'any');
@@ -156,7 +149,7 @@ export function useSiweAuth() {
               account: address as `0x${string}`,
               message: messageString,
             });
-            console.log('[SIWE] Standard signature from wagmi:', signature);
+            console.log('[SIWE] Fallback signature from wagmi:', signature);
           }
         } else {
           // No ethereum object, use wagmi directly
