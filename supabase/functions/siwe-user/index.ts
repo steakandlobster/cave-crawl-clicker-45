@@ -44,63 +44,108 @@ function normalizeSignature(sig) {
   if (!sig) return sig;
   let hex = sig.startsWith('0x') ? sig.slice(2) : sig;
   
+  console.log('[SIWE] Normalizing signature, input length:', hex.length);
+  
   // Raw 65-byte signature is 130 hex chars
-  if (hex.length === 130) return '0x' + hex;
+  if (hex.length === 130) {
+    console.log('[SIWE] Found standard 65-byte signature');
+    return '0x' + hex;
+  }
   
   const MAGIC_6492 = '6492649264926492649264926492649264926492649264926492649264926492';
   
   try {
     if (hex.length > 130) {
-      // Handle ABI-encoded dynamic bytes: [offset(32)][len(32)][data(len)][padding]
-      // First try: offset at position 0, length at position 64
+      console.log('[SIWE] Processing long signature, attempting ABI decode...');
+      
+      // Handle AGW ABI-encoded signatures specifically
+      // AGW format: [offset(32)][signer_address(32)][length(32)][signature_data(65)][padding]
+      if (hex.length >= 256) { // At least 128 bytes for the structure
+        console.log('[SIWE] Attempting AGW ABI decode...');
+        
+        // Check for standard ABI offset (0x40 = 64)
+        const offsetWord = hex.slice(0, 64);
+        const offset = parseInt(offsetWord, 16);
+        console.log('[SIWE] ABI offset:', offset);
+        
+        if (offset === 64) {
+          // Skip signer address (next 32 bytes) and get length
+          const lengthStart = 128; // Skip offset + signer address
+          const lengthWord = hex.slice(lengthStart, lengthStart + 64);
+          const length = parseInt(lengthWord, 16);
+          console.log('[SIWE] Signature length:', length);
+          
+          // For AGW, signature should be 65 bytes
+          if (length === 65) {
+            const dataStart = lengthStart + 64; // Skip length word
+            const dataEnd = dataStart + length * 2; // 65 bytes = 130 hex chars
+            
+            if (hex.length >= dataEnd) {
+              const sigData = hex.slice(dataStart, dataEnd);
+              console.log('[SIWE] Extracted AGW signature length:', sigData.length);
+              
+              if (sigData.length === 130) {
+                console.log('[SIWE] Successfully extracted AGW signature');
+                return '0x' + sigData;
+              }
+            }
+          }
+        }
+      }
+      
+      // Fallback: standard ABI-encoded dynamic bytes
       if (hex.length >= 128) {
         const offsetWord = hex.slice(0, 64);
         const offset = parseInt(offsetWord, 16);
         
-        // If offset points to position 64 (0x40), this is standard ABI encoding
         if (offset === 64 && hex.length >= 128) {
           const lenWord = hex.slice(64, 128);
           const length = parseInt(lenWord, 16);
           
-          // Standard signature lengths: 65 bytes (130 hex chars) or 64 bytes (128 hex chars)
           if ((length === 65 || length === 64) && hex.length >= 128 + length * 2) {
             const dataStart = 128;
             const dataEnd = dataStart + length * 2;
             const sigData = hex.slice(dataStart, dataEnd);
             
             if (sigData.length === 130) {
+              console.log('[SIWE] Extracted via standard ABI decode');
               return '0x' + sigData;
             } else if (sigData.length === 128) {
-              // 64-byte signature, add recovery ID
+              console.log('[SIWE] Extracted 64-byte sig, adding recovery ID');
               return '0x' + sigData + '1b';
             }
           }
         }
       }
       
-      // Fallback: Look for ERC-6492 magic bytes and extract signature before them
+      // Fallback: Look for ERC-6492 magic bytes
       const markerIndex = hex.indexOf(MAGIC_6492);
       if (markerIndex > 130) {
         const sigData = hex.slice(markerIndex - 130, markerIndex);
-        if (sigData.length === 130) return '0x' + sigData;
+        if (sigData.length === 130) {
+          console.log('[SIWE] Extracted via ERC-6492 pattern');
+          return '0x' + sigData;
+        }
       }
       
-      // Last resort: if signature is way too long, try to find a 65-byte sequence
+      // Last resort: pattern matching for signature-like sequences
       if (hex.length > 200) {
-        // Look for patterns that might be signatures (start with common recovery IDs)
+        console.log('[SIWE] Attempting pattern-based extraction...');
         for (let i = 0; i <= hex.length - 130; i += 2) {
           const candidate = hex.slice(i, i + 130);
-          const lastByte = candidate.slice(-2);
+          const lastByte = candidate.slice(-2).toLowerCase();
           if (['1b', '1c', '00', '01'].includes(lastByte)) {
+            console.log('[SIWE] Found candidate signature at position', i);
             return '0x' + candidate;
           }
         }
       }
     }
   } catch (e) {
-    console.error('Error normalizing signature:', e);
+    console.error('[SIWE] Error normalizing signature:', e);
   }
   
+  console.log('[SIWE] No normalization applied, returning original');
   return sig;
 }
 serve(async (req)=>{
@@ -266,9 +311,13 @@ serve(async (req)=>{
         }
 
         if (!verified) {
+          console.error('[SIWE] Verification failed for address:', siweMessage.address, 'chain:', siweMessage.chainId);
+          console.error('[SIWE] Original signature length:', signature.length);
+          console.error('[SIWE] Normalized signature:', normalizedSignature);
+          
           return new Response(JSON.stringify({
             ok: false,
-            error: 'Invalid signature'
+            error: 'Signature verification failed. Ensure you are using an Abstract Global Wallet on the correct network.'
           }), {
             status: 401,
             headers: {
