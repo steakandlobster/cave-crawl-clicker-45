@@ -47,12 +47,20 @@ export function SignupWithReferral({ onComplete, initialReferralCode = '' }: Sig
       // Generate a unique referral code for this user
       const userReferralCode = `CAVE${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-      // Create user profile with proper ID generation
-      const profileId = crypto.randomUUID();
+      // Get the current authenticated user ID
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        toast.error('Authentication error. Please try signing in again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create user profile with authenticated user ID
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: profileId,
+          id: user.id,
           username: username || `Explorer${address.slice(-4)}`,
           wallet_address: address,
           referral_code: userReferralCode,
