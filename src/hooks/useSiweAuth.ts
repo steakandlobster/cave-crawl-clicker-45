@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useSignMessage, useConnect, useReconnect } from 'wagmi';
 import { SiweAuthData } from '@/types/siwe';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,23 +10,20 @@ const SIWE_API_BASE = 'https://aegayadckentahcljxhf.supabase.co/functions/v1';
 export function useSiweAuth() {
   const { address, chainId, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { reconnect } = useReconnect();
   const [authData, setAuthData] = useState<SiweAuthData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Check authentication status
   const checkAuthStatus = useCallback(async () => {
-    if (!isConnected) {
-      setAuthData(null);
-      return;
-    }
-
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       console.log('[SIWE] Current session:', !!session?.access_token);
       
-      // If there's no Supabase session, check if we just completed auth
+      // If there's no Supabase session, user is not authenticated
       if (!session?.access_token) {
         console.log('[SIWE] No session found, user not authenticated');
         setAuthData({ ok: false, error: 'No session' });
@@ -51,6 +48,16 @@ export function useSiweAuth() {
       if (response.ok && parsed) {
         setAuthData(parsed);
         console.log('[SIWE] Auth data set successfully:', parsed);
+        
+        // If we have valid auth but no wallet connection, try to reconnect
+        if (!isConnected && (parsed as any)?.user?.user_metadata?.wallet_address) {
+          console.log('[SIWE] Valid session found but wallet not connected, attempting reconnect...');
+          try {
+            reconnect();
+          } catch (reconnectError) {
+            console.log('[SIWE] Auto-reconnect failed:', reconnectError);
+          }
+        }
       } else {
         setAuthData({ ok: false, error: parsed?.error || `status ${response.status}` });
       }
@@ -60,7 +67,25 @@ export function useSiweAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected]);
+  }, [isConnected, reconnect]);
+
+  // Initial auth check on app load
+  const initializeAuth = useCallback(async () => {
+    if (isInitialized) return;
+    
+    console.log('[SIWE] Initializing auth state...');
+    setIsInitialized(true);
+    
+    // First, try to reconnect wallet if there was a previous connection
+    try {
+      reconnect();
+    } catch (error) {
+      console.log('[SIWE] No previous wallet connection to restore');
+    }
+    
+    // Then check auth status regardless of wallet connection
+    await checkAuthStatus();
+  }, [isInitialized, reconnect, checkAuthStatus]);
 
   // Generate a random nonce
   const generateNonce = () => {
@@ -216,10 +241,17 @@ export function useSiweAuth() {
     }
   }, []);
 
-  // Check auth status on connection change
+  // Initialize on mount
   useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Check auth status when wallet connection changes
+  useEffect(() => {
+    if (isInitialized) {
+      checkAuthStatus();
+    }
+  }, [checkAuthStatus, isConnected, isInitialized]);
 
   // Enhanced authentication check with more detailed logging
   const isAuthenticated = Boolean(
@@ -232,16 +264,20 @@ export function useSiweAuth() {
     console.log('[SIWE] Auth state update:', {
       authData,
       isAuthenticated,
+      isConnected,
       hasUser: !!(authData as any)?.user,
       userId: (authData as any)?.user?.id,
+      walletAddress: (authData as any)?.user?.user_metadata?.wallet_address,
+      isInitialized,
     });
-  }, [authData, isAuthenticated]);
+  }, [authData, isAuthenticated, isConnected, isInitialized]);
 
   return {
     authData,
     isLoading,
     isAuthenticating,
     isAuthenticated,
+    isInitialized,
     signIn,
     signOut,
     checkAuthStatus,
