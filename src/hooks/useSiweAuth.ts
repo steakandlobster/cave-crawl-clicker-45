@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
-import { createSiweMessage } from '@/lib/siwe';
 import { SiweAuthData } from '@/types/siwe';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,9 +46,11 @@ export function useSiweAuth() {
       try { parsed = text ? JSON.parse(text) : null; } catch {}
 
       console.log('[SIWE] /siwe-user status:', response.status, 'body:', text);
+      console.log('[SIWE] Parsed response:', parsed);
 
       if (response.ok && parsed) {
         setAuthData(parsed);
+        console.log('[SIWE] Auth data set successfully:', parsed);
       } else {
         setAuthData({ ok: false, error: parsed?.error || `status ${response.status}` });
       }
@@ -185,8 +186,9 @@ export function useSiweAuth() {
 
       console.log('[SIWE] OTP verification successful, waiting for session...');
       // Small delay to ensure session is properly established
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      // Force a fresh check of auth status
       await checkAuthStatus();
       toast.success('Successfully authenticated!');
     } catch (error: any) {
@@ -219,7 +221,21 @@ export function useSiweAuth() {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
-  const isAuthenticated = Boolean((authData as any)?.ok && ((authData as any)?.user?.id || (authData as any)?.user?.isAuthenticated));
+  // Enhanced authentication check with more detailed logging
+  const isAuthenticated = Boolean(
+    authData?.ok && 
+    (authData as any)?.user?.id
+  );
+
+  // Debug logging for authentication state
+  useEffect(() => {
+    console.log('[SIWE] Auth state update:', {
+      authData,
+      isAuthenticated,
+      hasUser: !!(authData as any)?.user,
+      userId: (authData as any)?.user?.id,
+    });
+  }, [authData, isAuthenticated]);
 
   return {
     authData,
