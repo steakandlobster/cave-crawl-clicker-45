@@ -1,7 +1,7 @@
 import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { AGWConnect } from '@/components/AGWConnect';
-import { useSiweAuth } from '@/hooks/useSiweAuth';
+import { useSiweAuth } from "@/contexts/SiweAuthContext";
 import { KeyIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

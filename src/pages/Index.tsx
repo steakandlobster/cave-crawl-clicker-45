@@ -11,7 +11,7 @@ import { SocialSharing } from "@/components/SocialSharing";
 import { useSessionStats, useOverallStats } from "@/hooks/useGameStats";
 import { useAchievements } from "@/hooks/useAchievements";
 import { AchievementNotification } from "@/components/AchievementNotification";
-import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useSiweAuth } from "@/contexts/SiweAuthContext";
 import { useAccount } from "wagmi";
 import { Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";

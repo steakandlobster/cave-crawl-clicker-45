@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Pickaxe } from "lucide-react";
 import { SiweButton } from "@/components/SiweButton";
 import { SignupWithReferral } from "@/components/SignupWithReferral";
-import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useSiweAuth } from "@/contexts/SiweAuthContext";
 import { useAccount } from 'wagmi';
 import { supabase } from '@/integrations/supabase/client';
 import caveBackground from "@/assets/cave-background.jpg";

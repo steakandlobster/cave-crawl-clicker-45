@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAccount } from "wagmi";
-import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useSiweAuth } from "@/contexts/SiweAuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RequireAuthProps {
