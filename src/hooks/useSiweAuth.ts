@@ -25,11 +25,15 @@ export function useSiweAuth() {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      // If there's no Supabase session yet, skip the GET call to avoid a 401 noise
+      console.log('[SIWE] Current session:', !!session?.access_token);
+      
+      // If there's no Supabase session, check if we just completed auth
       if (!session?.access_token) {
-        setAuthData(null);
+        console.log('[SIWE] No session found, user not authenticated');
+        setAuthData({ ok: false, error: 'No session' });
         return;
       }
+      
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
@@ -179,10 +183,11 @@ export function useSiweAuth() {
         throw new Error(verifyErr.message || 'Failed to create Supabase session');
       }
 
+      console.log('[SIWE] OTP verification successful, waiting for session...');
+      // Small delay to ensure session is properly established
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       await checkAuthStatus();
-
-      console.log('Auth status after checkAuthStatus:', { authData, isAuthenticated });
-
       toast.success('Successfully authenticated!');
     } catch (error: any) {
       console.error('[SIWE] Sign in error:', error);
