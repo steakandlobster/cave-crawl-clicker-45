@@ -180,6 +180,9 @@ export function useSiweAuth() {
       }
 
       await checkAuthStatus();
+
+      console.log('Auth status after checkAuthStatus:', { authData, isAuthenticated });
+
       toast.success('Successfully authenticated!');
     } catch (error: any) {
       console.error('[SIWE] Sign in error:', error);
