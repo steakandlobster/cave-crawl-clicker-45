@@ -42,22 +42,33 @@ export default function Auth() {
   // Check if user has completed profile setup after SIWE authentication
   useEffect(() => {
     const checkProfile = async () => {
-      if (!isConnected || !address || !isAuthenticated) return;
+      if (!isConnected || !address || !isAuthenticated) {
+        console.log('[Auth] Skipping profile check:', { isConnected, address, isAuthenticated });
+        return;
+      }
       
+      console.log('[Auth] Checking profile for address:', address);
       setIsChecking(true);
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('id')
+          .select('id, username')
           .eq('wallet_address', address)
           .single();
 
+        console.log('[Auth] Profile check result:', { profile, error });
+
         if (profile && !error) {
           // Profile exists, set state and redirect to home
+          console.log('[Auth] Profile found, redirecting to home');
           setHasProfile(true);
-          navigate('/');
+          // Use setTimeout to ensure state updates before navigation
+          setTimeout(() => {
+            navigate('/', { replace: true });
+          }, 100);
         } else {
           // No profile found, show signup form
+          console.log('[Auth] No profile found, showing signup form');
           setHasProfile(false);
         }
       } catch (error) {
@@ -72,7 +83,8 @@ export default function Auth() {
   }, [isConnected, address, isAuthenticated, navigate]);
 
   const handleSignupComplete = () => {
-    navigate('/');
+    console.log('[Auth] Signup completed, redirecting to home');
+    navigate('/', { replace: true });
   };
 
 
