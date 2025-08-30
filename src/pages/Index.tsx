@@ -16,6 +16,7 @@ import { useAccount } from "wagmi";
 import { Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from "react";
 
 const [isWeb3Mode, setIsWeb3Mode] = useState(false);
 
