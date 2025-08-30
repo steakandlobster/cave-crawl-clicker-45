@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,9 @@ const Index = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(0.001);
   const [customAmount, setCustomAmount] = useState("");
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
+  
+  // Add Web3 mode toggle for testing
+  const [isWeb3Mode, setIsWeb3Mode] = useState(false);
   
   const { sessionStats, sessionId } = useSessionStats();
   const { overallStats } = useOverallStats();
@@ -70,17 +72,25 @@ const Index = () => {
     }
 
     try {
-      // For SIWE auth, we'll use the wallet address as the user identifier
       console.log("Starting game with wallet address:", address);
 
+      // Prepare request data based on mode
+      const requestData = {
+        amount_wagered: credits,
+        max_rounds: 6,
+        client_seed: String(Date.now()),
+        session_id: sessionId,
+        wallet_address: address,
+        game_mode: isWeb3Mode ? "web3" : "traditional",
+        // Web3 mode will need additional params later
+        ...(isWeb3Mode && {
+          bet_id: null, // Will be generated after contract interaction
+          player_address: address
+        })
+      };
+
       const { data, error } = await supabase.functions.invoke("start-game", {
-        body: {
-          amount_wagered: credits,
-          max_rounds: 6,
-          client_seed: String(Date.now()),
-          session_id: sessionId,
-          wallet_address: address, // Include wallet address for SIWE auth
-        },
+        body: requestData,
       });
 
       if (error) {
@@ -103,6 +113,7 @@ const Index = () => {
           maxRounds: data?.max_rounds ?? 6,
           score: 0,
           sessionId: data?.session_id,
+          gameMode: isWeb3Mode ? "web3" : "traditional",
         },
       });
     } catch (error) {
@@ -152,11 +163,28 @@ const Index = () => {
             </div>
 
             <div className="max-w-2xl mx-auto">
+              {/* Web3 Mode Toggle for Testing */}
+              <Card className="p-4 mb-6 bg-blue-500/10 border-blue-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-blue-400">Testing Mode</p>
+                    <p className="text-sm text-muted-foreground">Toggle between traditional and Web3 betting</p>
+                  </div>
+                  <Button
+                    variant={isWeb3Mode ? "treasure" : "cave"}
+                    onClick={() => setIsWeb3Mode(!isWeb3Mode)}
+                    size="sm"
+                  >
+                    {isWeb3Mode ? "Web3 Mode" : "Traditional Mode"}
+                  </Button>
+                </div>
+              </Card>
+
               <Card className="p-8 shadow-deep">
                 <div className="space-y-6">
                   <div>
                     <Label className="text-lg font-semibold mb-4 block">
-                      Select Your ETH Wager
+                      Select Your ETH Wager {isWeb3Mode && "(Real ETH)"}
                     </Label>
                     
                     <div className="grid grid-cols-3 gap-4 mb-6">
@@ -213,6 +241,12 @@ const Index = () => {
                         <span className="ml-2">({getAmountForButton()} ETH)</span>
                       )}
                     </Button>
+                    
+                    {isWeb3Mode && (
+                      <p className="text-xs text-center mt-2 text-yellow-400">
+                        Real ETH will be wagered from your wallet
+                      </p>
+                    )}
                   </div>
                 </div>
               </Card>
