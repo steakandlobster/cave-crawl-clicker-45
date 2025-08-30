@@ -17,6 +17,8 @@ import { Coins, Map } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+const [isWeb3Mode, setIsWeb3Mode] = useState(false);
+
 const Index = () => {
   const navigate = useNavigate();
   const { address } = useAccount();
