@@ -96,15 +96,21 @@ export type Database = {
       game_sessions: {
         Row: {
           amount_wagered: number
+          bet_id: string | null
           blockchain_game_id: string | null
+          blockchain_status: string | null
+          blockchain_tx_hash: string | null
           completed_at: string | null
           contract_address: string | null
           created_at: string
           final_result: string | null
           game_hash: string
+          game_mode: string | null
           id: string
           net_result: number | null
           passages_navigated: number | null
+          payout_tx_hash: string | null
+          player_address: string | null
           pre_generated_results: Json
           server_seed: string | null
           session_id: string | null
@@ -117,15 +123,21 @@ export type Database = {
         }
         Insert: {
           amount_wagered: number
+          bet_id?: string | null
           blockchain_game_id?: string | null
+          blockchain_status?: string | null
+          blockchain_tx_hash?: string | null
           completed_at?: string | null
           contract_address?: string | null
           created_at?: string
           final_result?: string | null
           game_hash: string
+          game_mode?: string | null
           id?: string
           net_result?: number | null
           passages_navigated?: number | null
+          payout_tx_hash?: string | null
+          player_address?: string | null
           pre_generated_results: Json
           server_seed?: string | null
           session_id?: string | null
@@ -138,15 +150,21 @@ export type Database = {
         }
         Update: {
           amount_wagered?: number
+          bet_id?: string | null
           blockchain_game_id?: string | null
+          blockchain_status?: string | null
+          blockchain_tx_hash?: string | null
           completed_at?: string | null
           contract_address?: string | null
           created_at?: string
           final_result?: string | null
           game_hash?: string
+          game_mode?: string | null
           id?: string
           net_result?: number | null
           passages_navigated?: number | null
+          payout_tx_hash?: string | null
+          player_address?: string | null
           pre_generated_results?: Json
           server_seed?: string | null
           session_id?: string | null
@@ -249,7 +267,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_pending_web3_payouts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          amount_wagered: number
+          bet_id: string
+          final_result: string
+          net_result: number
+          player_address: string
+          session_id: number
+        }[]
+      }
+      update_blockchain_status: {
+        Args: { p_session_id: number; p_status: string; p_tx_hash?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
